@@ -1,0 +1,11 @@
+﻿using MundoPrendarios.Core.Entities;
+
+namespace MundoPrendarios.Core.Interfaces
+{
+    public interface IClienteRepository : IGenericRepository<Cliente>
+    {
+        Task<Cliente> GetClienteByDniAsync(string dni);
+        Task<Cliente> GetClienteByCuilAsync(string cuil);
+        Task<IReadOnlyList<Cliente>> GetClientesByCanalAsync(int canalId);
+    }
+}
