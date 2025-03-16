@@ -90,11 +90,19 @@ namespace MundoPrendarios.Infrastructure.Repositories
         // Añadir a MundoPrendarios.Infrastructure.Repositories/SubcanalRepository.cs
         public async Task<IReadOnlyList<Subcanal>> GetSubcanalesByVendorAsync(int vendorId)
         {
-            return await _dbContext.SubcanalVendors
+            // Primero, obtenemos los IDs de subcanales donde está asignado el vendor
+            var subcanalIds = await _dbContext.SubcanalVendors
                 .Where(sv => sv.UsuarioId == vendorId)
-                .Select(sv => sv.Subcanal)
+                .Select(sv => sv.SubcanalId)
+                .ToListAsync();
+
+            // Luego, consultamos esos subcanales con sus relaciones
+            return await _dbContext.Subcanales
+                .Where(s => subcanalIds.Contains(s.Id))
                 .Include(s => s.Canal)
                 .Include(s => s.Gastos)
+                .Include(s => s.SubcanalVendors)
+                    .ThenInclude(sv => sv.Usuario)
                 .ToListAsync();
         }
     }

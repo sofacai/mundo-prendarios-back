@@ -15,16 +15,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
         private readonly ISubcanalRepository _subcanalRepository;
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IGastoRepository _gastoRepository;
+        private readonly IOperacionService _operacionService;
         private readonly IMapper _mapper;
-
+        
         public SubcanalService(ISubcanalRepository subcanalRepository,
                               IUsuarioRepository usuarioRepository,
                               IGastoRepository gastoRepository,
+                              IOperacionService operacionService,
                               IMapper mapper)
         {
             _subcanalRepository = subcanalRepository;
             _usuarioRepository = usuarioRepository;
             _gastoRepository = gastoRepository;
+            _operacionService = operacionService;
             _mapper = mapper;
         }
 
@@ -56,8 +59,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             await _subcanalRepository.AddAsync(subcanal);
 
+            // Agregar gasto por defecto del 8%
+            var gastoDefault = new Gasto
+            {
+                Nombre = "Gasto",
+                Porcentaje = 8.0m,
+                SubcanalId = subcanal.Id
+            };
+
+            await _gastoRepository.AddAsync(gastoDefault);
+
             // Cargar relaciones para el mapeo
             subcanal.AdminCanal = adminCanal;
+            subcanal.Gastos = new List<Gasto> { gastoDefault };
 
             // Mapear la entidad al DTO
             return _mapper.Map<Subcanal, SubcanalDto>(subcanal);
@@ -307,6 +321,135 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             }
 
             return vendors;
+        }
+
+        public async Task<GastoDto> ActualizarGastoAsync(int gastoId, GastoActualizarDto gastoDto)
+        {
+            var gasto = await _gastoRepository.GetByIdAsync(gastoId);
+            if (gasto == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el gasto con ID {gastoId}");
+            }
+
+            // Actualizar propiedades
+            gasto.Nombre = gastoDto.Nombre;
+            gasto.Porcentaje = gastoDto.Porcentaje;
+
+            await _gastoRepository.UpdateAsync(gasto);
+
+            // Mapear la entidad actualizada al DTO
+            return _mapper.Map<Gasto, GastoDto>(gasto);
+        }
+
+        public async Task<IReadOnlyList<SubcanalDto>> ObtenerSubcanalesPorAdminCanalAsync(int adminCanalId)
+        {
+            // Verificar que el adminCanal exista
+            var adminCanal = await _usuarioRepository.GetByIdAsync(adminCanalId);
+            if (adminCanal == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el usuario con ID {adminCanalId}");
+            }
+
+            // Verificar que tenga el rol correcto
+            if (adminCanal.RolId != 2) // Asumiendo que 2 es el ID del rol AdminCanal
+            {
+                throw new ArgumentException("El usuario no tiene el rol de Administrador de Canal");
+            }
+
+            // Obtener todos los subcanales con sus detalles
+            var subcanales = await _subcanalRepository.GetAllSubcanalesWithDetailsAsync();
+
+            // Filtrar por AdminCanalId
+            var subcanalFiltrados = subcanales.Where(s => s.AdminCanalId == adminCanalId).ToList();
+
+            // Mapear cada entidad al DTO
+            var result = new List<SubcanalDto>();
+            foreach (var subcanal in subcanalFiltrados)
+            {
+                var subcanalDto = _mapper.Map<Subcanal, SubcanalDto>(subcanal);
+
+                // Mapear manualmente los vendors si es necesario
+                if (subcanal.SubcanalVendors != null && subcanal.SubcanalVendors.Any())
+                {
+                    subcanalDto.Vendors = subcanal.SubcanalVendors
+                        .Where(sv => sv.Usuario != null)
+                        .Select(sv => _mapper.Map<Usuario, UsuarioDto>(sv.Usuario))
+                        .ToList();
+                }
+
+                result.Add(subcanalDto);
+            }
+
+            return result;
+        }
+
+        public async Task<IReadOnlyList<SubcanalDto>> ObtenerSubcanalesPorUsuarioAsync(int usuarioId)
+        {
+            // Verificar que el usuario exista
+            var usuario = await _usuarioRepository.GetByIdAsync(usuarioId);
+            if (usuario == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el usuario con ID {usuarioId}");
+            }
+
+            List<Subcanal> subcanales = new List<Subcanal>();
+
+            // Si es AdminCanal, obtener subcanales donde es administrador
+            if (usuario.RolId == 2) // RolId 2 = AdminCanal
+            {
+                var allSubcanales = await _subcanalRepository.GetAllSubcanalesWithDetailsAsync();
+                subcanales.AddRange(allSubcanales.Where(s => s.AdminCanalId == usuarioId));
+            }
+
+            // Si es Vendor, obtener subcanales donde está asignado
+            if (usuario.RolId == 3) // RolId 3 = Vendor
+            {
+                var vendorSubcanales = await _subcanalRepository.GetSubcanalesByVendorAsync(usuarioId);
+
+                // Cargar manualmente los AdminCanal para cada subcanal
+                foreach (var subcanal in vendorSubcanales)
+                {
+                    if (subcanal.AdminCanal == null && subcanal.AdminCanalId > 0)
+                    {
+                        subcanal.AdminCanal = await _usuarioRepository.GetByIdAsync(subcanal.AdminCanalId);
+                    }
+                }
+
+                subcanales.AddRange(vendorSubcanales);
+            }
+
+            // Mapear las entidades a DTOs
+            var result = new List<SubcanalDto>();
+            foreach (var subcanal in subcanales.Distinct())
+            {
+                var subcanalDto = _mapper.Map<Subcanal, SubcanalDto>(subcanal);
+
+                // Mapear vendors si es necesario
+                if (subcanal.SubcanalVendors != null && subcanal.SubcanalVendors.Any())
+                {
+                    subcanalDto.Vendors = subcanal.SubcanalVendors
+                        .Where(sv => sv.Usuario != null)
+                        .Select(sv => _mapper.Map<Usuario, UsuarioDto>(sv.Usuario))
+                        .ToList();
+                }
+
+                result.Add(subcanalDto);
+            }
+
+            return result;
+        }
+
+        public async Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorSubcanalAsync(int subcanalId)
+        {
+            // Verificar que el subcanal exista
+            var subcanal = await _subcanalRepository.GetByIdAsync(subcanalId);
+            if (subcanal == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el subcanal con ID {subcanalId}");
+            }
+
+            // Reutilizamos el servicio de operaciones para obtener los datos
+            return await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
         }
     }
 }

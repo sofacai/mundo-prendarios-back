@@ -397,5 +397,128 @@ namespace MundoPrendarios.API.Controllers
                 return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        [HttpPut("gasto/{gastoId}")]
+        public async Task<ActionResult<GastoDto>> UpdateGasto(int gastoId, GastoActualizarDto gastoDto)
+        {
+            try
+            {
+                // Solo Admin puede actualizar gastos
+                if (!_currentUserService.IsAdmin())
+                {
+                    return StatusCode(403, new { mensaje = "Solo los administradores pueden actualizar gastos." });
+                }
+
+                var updatedGasto = await _subcanalService.ActualizarGastoAsync(gastoId, gastoDto);
+                return Ok(updatedGasto);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { mensaje = "No se encontró el gasto especificado." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+        }
+
+        [HttpGet("admincanal/{adminCanalId}")]
+        public async Task<ActionResult<IEnumerable<SubcanalDto>>> GetSubcanalesByAdminCanal(int adminCanalId)
+        {
+            try
+            {
+                // Verificar permisos básicos
+                var (tienePermiso, respuestaError) = VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Si es AdminCanal, solo puede ver sus propios subcanales
+                if (_currentUserService.IsAdminCanal() && _currentUserService.GetUserId() != adminCanalId)
+                {
+                    return StatusCode(403, new { mensaje = "Como Administrador de Canal, solo puedes consultar tus propios subcanales." });
+                }
+
+                var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(adminCanalId);
+                return Ok(subcanales);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        [HttpGet("usuario/{usuarioId}")]
+        public async Task<ActionResult<IEnumerable<SubcanalDto>>> GetSubcanalesByUsuario(int usuarioId)
+        {
+            try
+            {
+                // Si es el usuario actual o un admin, permitir
+                if (_currentUserService.GetUserId() == usuarioId || _currentUserService.IsAdmin())
+                {
+                    var subcanales = await _subcanalService.ObtenerSubcanalesPorUsuarioAsync(usuarioId);
+                    return Ok(subcanales);
+                }
+
+                // Si es AdminCanal, solo puede consultar sobre sus vendors
+                if (_currentUserService.IsAdminCanal())
+                {
+                    // Obtener los subcanales que administra
+                    var misSubcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(_currentUserService.GetUserId());
+
+                    // Verificar si el usuario solicitado es un vendor de alguno de sus subcanales
+                    bool esVendorDeMisSubcanales = misSubcanales.Any(sc =>
+                        sc.Vendors != null && sc.Vendors.Any(v => v.Id == usuarioId));
+
+                    if (esVendorDeMisSubcanales)
+                    {
+                        var subcanales = await _subcanalService.ObtenerSubcanalesPorUsuarioAsync(usuarioId);
+                        return Ok(subcanales);
+                    }
+
+                    return StatusCode(403, new { mensaje = "Solo puedes consultar información de tus propios vendedores." });
+                }
+
+                return StatusCode(403, new { mensaje = "No tienes permisos para realizar esta consulta." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        [HttpGet("{subcanalId}/operaciones")]
+        public async Task<ActionResult<IEnumerable<OperacionDto>>> GetOperacionesBySubcanal(int subcanalId)
+        {
+            try
+            {
+                // Verificar si tiene permisos para este subcanal
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(subcanalId);
+                if (!tienePermiso)
+                    return respuestaError;
+
+                var operaciones = await _subcanalService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
+                return Ok(operaciones);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+        }
     }
 }
