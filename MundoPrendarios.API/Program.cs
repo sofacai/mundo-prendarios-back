@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MundoPrendarios.Core.Interfaces;
 using MundoPrendarios.Core.Mapping;
+using MundoPrendarios.Core.Services;
 using MundoPrendarios.Core.Services.Implementaciones;
 using MundoPrendarios.Core.Services.Interfaces;
 using MundoPrendarios.Infrastructure.Data;
@@ -13,7 +14,7 @@ using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
-        
+
 // Configuración de la base de datos
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -95,9 +96,7 @@ builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<IOperacionRepository, OperacionRepository>();
 builder.Services.AddScoped<IGastoRepository, GastoRepository>();
 builder.Services.AddScoped<IReglaCotizacionRepository, ReglaCotizacionRepository>();
-builder.Services.AddScoped<IOperacionRepository, OperacionRepository>();
-
-
+builder.Services.AddScoped<IClienteVendorRepository, ClienteVendorRepository>();
 
 // Registrar servicios
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -110,15 +109,11 @@ builder.Services.AddScoped<IReglaCotizacionService, ReglaCotizacionService>();
 builder.Services.AddScoped<IPlanService, PlanService>();
 builder.Services.AddScoped<IOperacionService, OperacionService>();
 builder.Services.AddScoped<IPlanCanalService, PlanCanalService>();
-
-
+builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IClienteVendorService, ClienteVendorService>();
 
 // Agregar AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
-// Añadir los demás servicios aquí a medida que se vayan implementando
-// builder.Services.AddScoped<ICanalService, CanalService>();
-// builder.Services.AddScoped<ISubcanalService, SubcanalService>();
-// etc.
 
 var app = builder.Build();
 
@@ -160,6 +155,5 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Un error ocurrió durante la migración");
     }
 }
-
 
 app.Run();

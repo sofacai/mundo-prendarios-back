@@ -72,6 +72,67 @@ namespace MundoPrendarios.Core.Mapping
             // Añadir mapeo para PlanCanal
             CreateMap<PlanCanal, PlanCanalDto>()
                 .ForMember(dest => dest.Plan, opt => opt.MapFrom(src => src.Plan));
+
+            // Cliente mappings
+            CreateMap<Cliente, ClienteDto>()
+                .ForMember(dest => dest.CanalNombre, opt => opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : string.Empty));
+            CreateMap<ClienteCrearDto, Cliente>();
+
+            // Añadir estos mapeos a la clase MappingProfile
+
+            // ClienteVendor mappings
+            CreateMap<ClienteVendors, ClienteVendorDto>()
+                .ForMember(dest => dest.ClienteNombre, opt =>
+                    opt.MapFrom(src => src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : ""))
+                .ForMember(dest => dest.VendedorNombre, opt =>
+                    opt.MapFrom(src => src.Vendedor != null ? $"{src.Vendedor.Nombre} {src.Vendedor.Apellido}" : ""));
+
+            CreateMap<ClienteVendorCrearDto, ClienteVendors>();
+
+            // Vendor resumido
+            CreateMap<Usuario, VendorResumenDto>()
+                .ForMember(dest => dest.FechaAsignacion, opt =>
+                    opt.Ignore()); // Esta propiedad se mapea manualmente
+
+            // Cliente actualizado
+            CreateMap<Cliente, ClienteDto>()
+                .ForMember(dest => dest.CanalNombre, opt =>
+                    opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : ""))
+                .ForMember(dest => dest.UsuarioCreadorNombre, opt =>
+                    opt.MapFrom(src => src.UsuarioCreador != null ? $"{src.UsuarioCreador.Nombre} {src.UsuarioCreador.Apellido}" : ""))
+                .ForMember(dest => dest.VendoresAsignados, opt =>
+                    opt.Ignore()) // Esta propiedad se mapea manualmente
+                .ForMember(dest => dest.NumeroOperaciones, opt =>
+                    opt.Ignore()); // Esta propiedad se mapea manualmente
+
+            // Cliente and related DTOs
+            CreateMap<Cliente, ClienteDto>()
+.ForMember(dest => dest.CanalNombre, opt => opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : string.Empty))
+                .ForMember(dest => dest.UsuarioCreadorNombre, opt => opt.MapFrom(src =>
+                    src.UsuarioCreador != null ? $"{src.UsuarioCreador.Nombre} {src.UsuarioCreador.Apellido}" : string.Empty))
+                .ForMember(dest => dest.VendoresAsignados, opt => opt.MapFrom(src =>
+                    src.ClienteVendors.Where(cv => cv.Activo).Select(cv => new VendorResumenDto
+                    {
+                        Id = cv.VendedorId,
+                        Nombre = cv.Vendedor.Nombre,
+                        Apellido = cv.Vendedor.Apellido,
+                        FechaAsignacion = cv.FechaAsignacion
+                    })))
+                .ForMember(dest => dest.NumeroOperaciones, opt => opt.MapFrom(src => src.Operaciones.Count));
+
+            CreateMap<ClienteCrearDto, Cliente>();
+            CreateMap<ClienteOperacionServicioDto, Cliente>();
+            CreateMap<ClienteWizardDto, Cliente>();
+
+            // ClienteVendors mappings
+            CreateMap<ClienteVendors, ClienteVendorDto>()
+                .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+                    src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : string.Empty))
+                .ForMember(dest => dest.VendedorNombre, opt => opt.MapFrom(src =>
+                    src.Vendedor != null ? $"{src.Vendedor.Nombre} {src.Vendedor.Apellido}" : string.Empty));
+
+            CreateMap<ClienteVendorCrearDto, ClienteVendors>();
+            CreateMap<Usuario, VendorResumenDto>();
         }
 
         private List<int> ConvertStringToIntList(string input)
@@ -81,5 +142,7 @@ namespace MundoPrendarios.Core.Mapping
 
             return input.Split(',').Select(s => int.Parse(s)).ToList();
         }
+
+
     }
 }

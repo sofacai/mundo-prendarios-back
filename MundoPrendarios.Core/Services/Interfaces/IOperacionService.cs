@@ -21,6 +21,7 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task<CotizacionResultadoDto> CotizarConLoginAsync(OperacionCotizarDto cotizacionDto, int usuarioId);
 
         // Método para crear un cliente junto con una operación
-        Task<OperacionDto> CrearClienteYOperacionAsync(ClienteOperacionDto clienteDto, OperacionCrearDto operacionDto, int? usuarioId);
+        Task<OperacionDto> CrearClienteYOperacionAsync(ClienteOperacionServicioDto clienteDto, OperacionCrearDto operacionDto, int? usuarioId);
+
     }
 }

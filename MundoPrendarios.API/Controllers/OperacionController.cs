@@ -121,7 +121,22 @@ namespace MundoPrendarios.API.Controllers
                     usuarioId = _currentUserService.GetUserId();
                 }
 
-                var createdOperacion = await _operacionService.CrearClienteYOperacionAsync(modelo.Cliente, modelo.Operacion, usuarioId);
+                // Actualiza la conversión en OperacionController.cs
+                var clienteOperacionDto = new ClienteOperacionServicioDto
+                {
+                    Nombre = modelo.Cliente.Nombre,
+                    Apellido = modelo.Cliente.Apellido,
+                    Cuil = modelo.Cliente.Cuil,
+                    Dni = modelo.Cliente.Dni,
+                    Email = modelo.Cliente.Email,
+                    Telefono = modelo.Cliente.Telefono,
+                    Provincia = modelo.Cliente.Provincia,
+                    Sexo = modelo.Cliente.Sexo,
+                    EstadoCivil = modelo.Cliente.EstadoCivil,
+                    CanalId = modelo.Operacion.CanalId
+                };
+
+                var createdOperacion = await _operacionService.CrearClienteYOperacionAsync(clienteOperacionDto, modelo.Operacion, usuarioId);
                 return CreatedAtAction("GetOperacion", new { id = createdOperacion.Id }, createdOperacion);
             }
             catch (KeyNotFoundException ex)

@@ -16,6 +16,8 @@ namespace MundoPrendarios.Core.Entities
         public Rol Rol { get; set; }
         public List<SubcanalVendor> SubcanalVendors { get; set; } = new List<SubcanalVendor>();
         public List<Operacion> Operaciones { get; set; } = new List<Operacion>();
+        public List<ClienteVendors> ClientesAsignados { get; set; } = new List<ClienteVendors>();
+
     }
 
     public class Rol

@@ -2,6 +2,9 @@
 using MundoPrendarios.Core.Entities;
 using MundoPrendarios.Core.Interfaces;
 using MundoPrendarios.Infrastructure.Data;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MundoPrendarios.Infrastructure.Repositories
 {
@@ -27,6 +30,37 @@ namespace MundoPrendarios.Infrastructure.Repositories
         {
             return await _dbContext.Clientes
                 .Where(c => c.CanalId == canalId)
+                .ToListAsync();
+        }
+
+        // Implementación de nuevos métodos
+        public async Task<Cliente> GetClienteWithDetailsAsync(int clienteId)
+        {
+            return await _dbContext.Clientes
+                .Include(c => c.Canal)
+                .Include(c => c.UsuarioCreador)
+                .Include(c => c.ClienteVendors)
+                    .ThenInclude(cv => cv.Vendedor)
+                .Include(c => c.Operaciones)
+                .FirstOrDefaultAsync(c => c.Id == clienteId);
+        }
+
+        public async Task<IReadOnlyList<Cliente>> GetClientesByVendorAsync(int vendorId)
+        {
+            return await _dbContext.Clientes
+                .Where(c => c.ClienteVendors.Any(cv => cv.VendedorId == vendorId && cv.Activo))
+                .Include(c => c.Canal)
+                .Include(c => c.Operaciones)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<Cliente>> GetAllClientesWithDetailsAsync()
+        {
+            return await _dbContext.Clientes
+                .Include(c => c.Canal)
+                .Include(c => c.UsuarioCreador)
+                .Include(c => c.ClienteVendors)
+                    .ThenInclude(cv => cv.Vendedor)
                 .ToListAsync();
         }
     }

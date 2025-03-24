@@ -22,6 +22,9 @@ namespace MundoPrendarios.Infrastructure.Data
         public DbSet<SubcanalVendor> SubcanalVendors { get; set; }
         public DbSet<PlanCanal> PlanesCanales { get; set; }
         public DbSet<ReglaCotizacion> ReglasCotizacion { get; set; }
+        public DbSet<ClienteVendors> ClienteVendors { get; set; }
+
+
 
 
 
@@ -192,6 +195,49 @@ namespace MundoPrendarios.Infrastructure.Data
             modelBuilder.Entity<ReglaCotizacion>()
                 .Property(r => r.MontoFijo)
                 .HasColumnType("decimal(18,2)");
+
+            // Nueva relación cliente - usuario creador
+            modelBuilder.Entity<Cliente>()
+                .HasOne(c => c.UsuarioCreador)
+                .WithMany()
+                .HasForeignKey(c => c.UsuarioCreadorId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Nueva relación ClienteVendor
+            modelBuilder.Entity<ClienteVendors>()
+        .HasKey(cv => cv.Id);
+
+            modelBuilder.Entity<ClienteVendors>()
+                .HasOne(cv => cv.Cliente)
+                .WithMany(c => c.ClienteVendors)
+                .HasForeignKey(cv => cv.ClienteId);
+
+            modelBuilder.Entity<ClienteVendors>()
+                .HasOne(cv => cv.Vendedor)
+                .WithMany(v => v.ClientesAsignados)
+                .HasForeignKey(cv => cv.VendedorId);
+
+            // Índice para evitar duplicados en ClienteVendor
+            modelBuilder.Entity<ClienteVendors>()
+                .HasIndex(cv => new { cv.ClienteId, cv.VendedorId })
+                .IsUnique();
+
+            // Se añaden índices para mejorar el rendimiento
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.Dni);
+
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.Cuil);
+
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.UsuarioCreadorId);
+
+            modelBuilder.Entity<Operacion>()
+                .HasIndex(o => o.ClienteId);
+
+            modelBuilder.Entity<Operacion>()
+                .HasIndex(o => o.VendedorId);
         }
     }
 }

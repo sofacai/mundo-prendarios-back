@@ -309,7 +309,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             };
         }
 
-        public async Task<OperacionDto> CrearClienteYOperacionAsync(ClienteOperacionDto clienteDto, OperacionCrearDto operacionDto, int? usuarioId)
+        public async Task<OperacionDto> CrearClienteYOperacionAsync(ClienteOperacionServicioDto clienteDto, OperacionCrearDto operacionDto, int? usuarioId)
         {
             // Crear el cliente
             var cliente = new Cliente

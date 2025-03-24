@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MundoPrendarios.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using MundoPrendarios.Infrastructure.Data;
 namespace MundoPrendarios.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250318225453_AgregarCamposCliente")]
+    partial class AgregarCamposCliente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -83,19 +86,16 @@ namespace MundoPrendarios.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Cuil")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Dni")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EstadoCivil")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Nombre")
                         .HasColumnType("nvarchar(max)");
@@ -109,53 +109,11 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<string>("Telefono")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("UltimaModificacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("UsuarioCreadorId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CanalId");
 
-                    b.HasIndex("Cuil");
-
-                    b.HasIndex("Dni");
-
-                    b.HasIndex("UsuarioCreadorId");
-
                     b.ToTable("Clientes");
-                });
-
-            modelBuilder.Entity("MundoPrendarios.Core.Entities.ClienteVendors", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ClienteId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("FechaAsignacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("VendedorId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VendedorId");
-
-                    b.HasIndex("ClienteId", "VendedorId")
-                        .IsUnique();
-
-                    b.ToTable("ClienteVendors");
                 });
 
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Gasto", b =>
@@ -473,33 +431,7 @@ namespace MundoPrendarios.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MundoPrendarios.Core.Entities.Usuario", "UsuarioCreador")
-                        .WithMany()
-                        .HasForeignKey("UsuarioCreadorId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Canal");
-
-                    b.Navigation("UsuarioCreador");
-                });
-
-            modelBuilder.Entity("MundoPrendarios.Core.Entities.ClienteVendors", b =>
-                {
-                    b.HasOne("MundoPrendarios.Core.Entities.Cliente", "Cliente")
-                        .WithMany("ClienteVendors")
-                        .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MundoPrendarios.Core.Entities.Usuario", "Vendedor")
-                        .WithMany("ClientesAsignados")
-                        .HasForeignKey("VendedorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Cliente");
-
-                    b.Navigation("Vendedor");
                 });
 
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Gasto", b =>
@@ -633,8 +565,6 @@ namespace MundoPrendarios.Infrastructure.Migrations
 
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Cliente", b =>
                 {
-                    b.Navigation("ClienteVendors");
-
                     b.Navigation("Operaciones");
                 });
 
@@ -652,8 +582,6 @@ namespace MundoPrendarios.Infrastructure.Migrations
 
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Usuario", b =>
                 {
-                    b.Navigation("ClientesAsignados");
-
                     b.Navigation("Operaciones");
 
                     b.Navigation("SubcanalVendors");
