@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MundoPrendarios.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using MundoPrendarios.Infrastructure.Data;
 namespace MundoPrendarios.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250324180201_AgregarCamposCanal")]
+    partial class AgregarCamposCanal
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -264,9 +267,6 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Banco")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CuotasAplicables")
                         .HasColumnType("nvarchar(max)");
 
@@ -276,7 +276,7 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("GastoOtorgamiento")
+                    b.Property<decimal>("MontoFijo")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MontoMaximo")
@@ -355,6 +355,41 @@ namespace MundoPrendarios.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MundoPrendarios.Core.Entities.Subcanal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("AdminCanalId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CanalId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Localidad")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Nombre")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Provincia")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminCanalId");
+
+                    b.HasIndex("CanalId");
+
+                    b.ToTable("Subcanales");
+                });
+
             modelBuilder.Entity("MundoPrendarios.Core.Entities.SubcanalVendor", b =>
                 {
                     b.Property<int>("Id")
@@ -392,17 +427,8 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<string>("Apellido")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("CantidadOperaciones")
-                        .HasColumnType("int");
-
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("FechaAlta")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaUltimaOperacion")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Nombre")
                         .HasColumnType("nvarchar(max)");
@@ -443,7 +469,7 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("GastoOtorgamiento")
+                    b.Property<decimal>("MontoFijo")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MontoMaximo")
@@ -461,44 +487,6 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ReglasCotizacion");
-                });
-
-            modelBuilder.Entity("Subcanal", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("AdminCanalId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CanalId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Comision")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Localidad")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Nombre")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Provincia")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AdminCanalId");
-
-                    b.HasIndex("CanalId");
-
-                    b.ToTable("Subcanales");
                 });
 
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Cliente", b =>
@@ -540,7 +528,7 @@ namespace MundoPrendarios.Infrastructure.Migrations
 
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Gasto", b =>
                 {
-                    b.HasOne("Subcanal", "Subcanal")
+                    b.HasOne("MundoPrendarios.Core.Entities.Subcanal", "Subcanal")
                         .WithMany("Gastos")
                         .HasForeignKey("SubcanalId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -569,7 +557,7 @@ namespace MundoPrendarios.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Subcanal", "Subcanal")
+                    b.HasOne("MundoPrendarios.Core.Entities.Subcanal", "Subcanal")
                         .WithMany()
                         .HasForeignKey("SubcanalId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -611,9 +599,28 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("MundoPrendarios.Core.Entities.Subcanal", b =>
+                {
+                    b.HasOne("MundoPrendarios.Core.Entities.Usuario", "AdminCanal")
+                        .WithMany()
+                        .HasForeignKey("AdminCanalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MundoPrendarios.Core.Entities.Canal", "Canal")
+                        .WithMany("Subcanales")
+                        .HasForeignKey("CanalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AdminCanal");
+
+                    b.Navigation("Canal");
+                });
+
             modelBuilder.Entity("MundoPrendarios.Core.Entities.SubcanalVendor", b =>
                 {
-                    b.HasOne("Subcanal", "Subcanal")
+                    b.HasOne("MundoPrendarios.Core.Entities.Subcanal", "Subcanal")
                         .WithMany("SubcanalVendors")
                         .HasForeignKey("SubcanalId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -641,25 +648,6 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Navigation("Rol");
                 });
 
-            modelBuilder.Entity("Subcanal", b =>
-                {
-                    b.HasOne("MundoPrendarios.Core.Entities.Usuario", "AdminCanal")
-                        .WithMany()
-                        .HasForeignKey("AdminCanalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MundoPrendarios.Core.Entities.Canal", "Canal")
-                        .WithMany("Subcanales")
-                        .HasForeignKey("CanalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AdminCanal");
-
-                    b.Navigation("Canal");
-                });
-
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Canal", b =>
                 {
                     b.Navigation("PlanesCanales");
@@ -679,18 +667,18 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Navigation("PlanesCanales");
                 });
 
+            modelBuilder.Entity("MundoPrendarios.Core.Entities.Subcanal", b =>
+                {
+                    b.Navigation("Gastos");
+
+                    b.Navigation("SubcanalVendors");
+                });
+
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Usuario", b =>
                 {
                     b.Navigation("ClientesAsignados");
 
                     b.Navigation("Operaciones");
-
-                    b.Navigation("SubcanalVendors");
-                });
-
-            modelBuilder.Entity("Subcanal", b =>
-                {
-                    b.Navigation("Gastos");
 
                     b.Navigation("SubcanalVendors");
                 });

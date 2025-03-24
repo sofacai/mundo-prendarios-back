@@ -104,7 +104,8 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 ? string.Join(",", planDto.CuotasAplicables)
                 : "";
             plan.Tasa = planDto.Tasa;
-            plan.MontoFijo = planDto.MontoFijo;
+            plan.GastoOtorgamiento = planDto.GastoOtorgamiento;
+            plan.Banco = planDto.Banco; 
 
             await _planRepository.UpdateAsync(plan);
         }

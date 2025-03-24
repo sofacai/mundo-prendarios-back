@@ -12,12 +12,16 @@ namespace MundoPrendarios.Core.Entities
         public int RolId { get; set; }
         public bool Activo { get; set; } = true;
 
+        // Nuevos campos para vendors (RolId = 3)
+        public DateTime? FechaAlta { get; set; }
+        public DateTime? FechaUltimaOperacion { get; set; }
+        public int CantidadOperaciones { get; set; } = 0;
+
         // Relaciones
         public Rol Rol { get; set; }
         public List<SubcanalVendor> SubcanalVendors { get; set; } = new List<SubcanalVendor>();
         public List<Operacion> Operaciones { get; set; } = new List<Operacion>();
         public List<ClienteVendors> ClientesAsignados { get; set; } = new List<ClienteVendors>();
-
     }
 
     public class Rol
@@ -41,4 +45,5 @@ namespace MundoPrendarios.Core.Entities
         public Subcanal Subcanal { get; set; }
         public Usuario Usuario { get; set; }
     }
+
 }

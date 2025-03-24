@@ -118,6 +118,11 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasForeignKey(o => o.SubcanalId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Configuración para el campo Comision
+            modelBuilder.Entity<Subcanal>()
+                .Property(s => s.Comision)
+                .HasColumnType("decimal(18,2)");
+
             // Operación - Canal
             modelBuilder.Entity<Operacion>()
                 .HasOne(o => o.Canal)
@@ -159,7 +164,7 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Plan>()
-                .Property(p => p.MontoFijo)
+                 .Property(p => p.GastoOtorgamiento)
                 .HasColumnType("decimal(18,2)");
 
             // Operacion - Monto, Tasa
@@ -193,7 +198,7 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<ReglaCotizacion>()
-                .Property(r => r.MontoFijo)
+                .Property(r => r.GastoOtorgamiento)
                 .HasColumnType("decimal(18,2)");
 
             // Nueva relación cliente - usuario creador

@@ -520,5 +520,26 @@ namespace MundoPrendarios.API.Controllers
                 return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        // PATCH: api/Subcanal/5/comision
+        [HttpPatch("{id}/comision")]
+        public async Task<ActionResult<SubcanalDto>> ActualizarComision(int id, ComisionActualizarDto comisionDto)
+        {
+            // Verificar permisos según sea necesario
+
+            try
+            {
+                var subcanal = await _subcanalService.ActualizarComisionAsync(id, comisionDto);
+                return Ok(subcanal);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { mensaje = $"No se encontró el subcanal con ID {id}." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
     }
 }

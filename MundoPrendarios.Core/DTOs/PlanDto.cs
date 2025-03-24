@@ -13,7 +13,8 @@
         public string CuotasAplicables { get; set; }
         public List<int> CuotasAplicablesList { get; set; }
         public decimal Tasa { get; set; }
-        public decimal MontoFijo { get; set; }
+        public decimal GastoOtorgamiento { get; set; } // Cambio de MontoFijo a GastoOtorgamiento
+        public string Banco { get; set; } // Nuevo campo
         public bool Activo { get; set; }
 
     }
@@ -29,7 +30,7 @@
         public decimal MontoMaximo { get; set; }
         public List<int> CuotasAplicables { get; set; }
         public decimal Tasa { get; set; }
-        public decimal MontoFijo { get; set; }
-  
+        public decimal GastoOtorgamiento { get; set; } // Cambio de MontoFijo a GastoOtorgamiento
+        public string Banco { get; set; } // Nuevo campo
     }
 }

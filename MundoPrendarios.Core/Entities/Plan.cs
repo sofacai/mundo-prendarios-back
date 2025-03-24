@@ -13,14 +13,10 @@ namespace MundoPrendarios.Core.Entities
         public decimal MontoMaximo { get; set; }
         public string CuotasAplicables { get; set; }
         public decimal Tasa { get; set; }
-        public decimal MontoFijo { get; set; }
+        public decimal GastoOtorgamiento { get; set; } // Cambio de MontoFijo a GastoOtorgamiento
+        public string Banco { get; set; } // Nuevo campo
         public bool Activo { get; set; } = true;
-
-        // Eliminar estas propiedades
-        // public int CanalId { get; set; }
-        // public Canal Canal { get; set; }
-
-        // Nueva relación
+        // Relación
         public List<PlanCanal> PlanesCanales { get; set; } = new List<PlanCanal>();
     }
 }

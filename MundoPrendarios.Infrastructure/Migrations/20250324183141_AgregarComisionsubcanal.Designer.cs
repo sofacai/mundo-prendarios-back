@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MundoPrendarios.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using MundoPrendarios.Infrastructure.Data;
 namespace MundoPrendarios.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250324183141_AgregarComisionsubcanal")]
+    partial class AgregarComisionsubcanal
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -264,9 +267,6 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Banco")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CuotasAplicables")
                         .HasColumnType("nvarchar(max)");
 
@@ -276,7 +276,7 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("GastoOtorgamiento")
+                    b.Property<decimal>("MontoFijo")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MontoMaximo")
@@ -392,17 +392,8 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<string>("Apellido")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("CantidadOperaciones")
-                        .HasColumnType("int");
-
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("FechaAlta")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaUltimaOperacion")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Nombre")
                         .HasColumnType("nvarchar(max)");
@@ -443,7 +434,7 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<DateTime>("FechaInicio")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("GastoOtorgamiento")
+                    b.Property<decimal>("MontoFijo")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MontoMaximo")

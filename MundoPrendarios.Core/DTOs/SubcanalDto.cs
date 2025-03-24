@@ -11,6 +11,7 @@
         public int AdminCanalId { get; set; }
         public string AdminCanalNombre { get; set; }
         public bool Activo { get; set; }
+        public decimal Comision { get; set; } // Nuevo campo
         public List<GastoDto> Gastos { get; set; } = new List<GastoDto>();
         public List<UsuarioDto> Vendors { get; set; } = new List<UsuarioDto>();
     }
@@ -22,6 +23,7 @@
         public string Localidad { get; set; }
         public int CanalId { get; set; }
         public int AdminCanalId { get; set; }
+        public decimal Comision { get; set; } = 0; // Nuevo campo con valor por defecto
     }
 
     public class GastoDto

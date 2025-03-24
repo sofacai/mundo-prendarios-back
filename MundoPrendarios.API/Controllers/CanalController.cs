@@ -111,13 +111,15 @@ namespace MundoPrendarios.API.Controllers
         [HttpPost]
         public async Task<ActionResult<CanalDto>> CreateCanal(CanalCrearDto canalDto)
         {
-            // Verificar permisos
+            // Verificar permisos (código existente)
             var (tienePermiso, respuestaError) = VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
 
             try
             {
+                // El método CrearCanalAsync ya debería estar actualizado en CanalService
+                // para manejar los nuevos campos de CanalCrearDto
                 var createdCanal = await _canalService.CrearCanalAsync(canalDto);
                 return CreatedAtAction("GetCanal", new { id = createdCanal.Id }, createdCanal);
             }
@@ -131,13 +133,15 @@ namespace MundoPrendarios.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCanal(int id, CanalCrearDto canalDto)
         {
-            // Verificar permisos
+            // Verificar permisos (código existente)
             var (tienePermiso, respuestaError) = VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
 
             try
             {
+                // El método ActualizarCanalAsync ya debería estar actualizado en CanalService
+                // para manejar los nuevos campos de CanalCrearDto
                 await _canalService.ActualizarCanalAsync(id, canalDto);
                 var canal = await _canalService.ObtenerCanalPorIdAsync(id);
                 return Ok(canal);

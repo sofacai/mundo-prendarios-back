@@ -54,6 +54,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Localidad = subcanalDto.Localidad,
                 CanalId = subcanalDto.CanalId,
                 AdminCanalId = subcanalDto.AdminCanalId,
+                Comision = subcanalDto.Comision, // Nuevo campo
                 Activo = true
             };
 
@@ -184,6 +185,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             subcanal.Provincia = subcanalDto.Provincia;
             subcanal.Localidad = subcanalDto.Localidad;
             subcanal.AdminCanalId = subcanalDto.AdminCanalId;
+            subcanal.Comision = subcanalDto.Comision; // Nuevo campo
 
             await _subcanalRepository.UpdateAsync(subcanal);
         }
@@ -450,6 +452,22 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             // Reutilizamos el servicio de operaciones para obtener los datos
             return await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
+        }
+
+        // Implementar en SubcanalService
+        public async Task<SubcanalDto> ActualizarComisionAsync(int subcanalId, ComisionActualizarDto comisionDto)
+        {
+            var subcanal = await _subcanalRepository.GetByIdAsync(subcanalId);
+            if (subcanal == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el subcanal con ID {subcanalId}");
+            }
+
+            subcanal.Comision = comisionDto.Comision;
+            await _subcanalRepository.UpdateAsync(subcanal);
+
+            // Obtener y retornar el subcanal actualizado con todos sus detalles
+            return await ObtenerSubcanalPorIdAsync(subcanalId);
         }
     }
 }

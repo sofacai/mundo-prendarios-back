@@ -6,7 +6,7 @@
     public decimal MontoMaximo { get; set; }
     public string CuotasAplicables { get; set; }
     public decimal Tasa { get; set; }
-    public decimal MontoFijo { get; set; }
+    public decimal GastoOtorgamiento { get; set; }
     public bool Activo { get; set; } = true;
     public DateTime FechaInicio { get; set; }
     public DateTime FechaFin { get; set; }

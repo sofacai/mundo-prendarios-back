@@ -44,7 +44,7 @@ namespace MundoPrendarios.Core.DTOs
         public decimal Monto { get; set; }
         public int Meses { get; set; }
         public decimal Tasa { get; set; }
-        public decimal MontoFijo { get; set; }
+        public decimal GastoOtorgamiento { get; set; }
         public decimal CuotaMensual { get; set; }
         public decimal MontoTotal { get; set; }
         public string PlanNombre { get; set; }

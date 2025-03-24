@@ -7,6 +7,7 @@
         public string RazonSocial { get; set; }
         public string Provincia { get; set; }
         public string Localidad { get; set; }
+        public string Direccion { get; set; } // Nuevo campo
         public string Cuit { get; set; }
         public string CBU { get; set; }
         public string Alias { get; set; }
@@ -14,6 +15,15 @@
         public string NumCuenta { get; set; }
         public string TipoCanal { get; set; }
         public bool Activo { get; set; }
+        public DateTime FechaAlta { get; set; } // Nuevo campo
+        public string OpcionesCobro { get; set; } // Nuevo campo
+        public string Foto { get; set; } // Nuevo campo
+
+        // Datos del titular
+        public string TitularNombreCompleto { get; set; } // Nuevo campo
+        public string TitularTelefono { get; set; } // Nuevo campo
+        public string TitularEmail { get; set; } // Nuevo campo
+
         public List<SubcanalSimpleDto> Subcanales { get; set; } = new List<SubcanalSimpleDto>();
         public List<PlanCanalDto> PlanesCanal { get; set; } = new List<PlanCanalDto>();
     }
@@ -24,12 +34,20 @@
         public string RazonSocial { get; set; }
         public string Provincia { get; set; }
         public string Localidad { get; set; }
+        public string Direccion { get; set; } // Nuevo campo
         public string Cuit { get; set; }
         public string CBU { get; set; }
         public string Alias { get; set; }
         public string Banco { get; set; }
         public string NumCuenta { get; set; }
         public string TipoCanal { get; set; }
+        public string OpcionesCobro { get; set; } // Nuevo campo
+        public string Foto { get; set; } // Nuevo campo
+
+        // Datos del titular
+        public string TitularNombreCompleto { get; set; } // Nuevo campo
+        public string TitularTelefono { get; set; } // Nuevo campo
+        public string TitularEmail { get; set; } // Nuevo campo
     }
 
     public class SubcanalSimpleDto

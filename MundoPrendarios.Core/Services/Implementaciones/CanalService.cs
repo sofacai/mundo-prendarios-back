@@ -26,12 +26,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 RazonSocial = canalDto.RazonSocial,
                 Provincia = canalDto.Provincia,
                 Localidad = canalDto.Localidad,
+                Direccion = canalDto.Direccion, // Nuevo campo
                 Cuit = canalDto.Cuit,
                 CBU = canalDto.CBU,
                 Alias = canalDto.Alias,
                 Banco = canalDto.Banco,
                 NumCuenta = canalDto.NumCuenta,
                 TipoCanal = canalDto.TipoCanal,
+                OpcionesCobro = canalDto.OpcionesCobro, // Nuevo campo
+                Foto = canalDto.Foto, // Nuevo campo
+                FechaAlta = DateTime.Now, // Nuevo campo (se establece automáticamente)
+                TitularNombreCompleto = canalDto.TitularNombreCompleto, // Nuevo campo
+                TitularTelefono = canalDto.TitularTelefono, // Nuevo campo
+                TitularEmail = canalDto.TitularEmail, // Nuevo campo
                 Activo = true
             };
 
@@ -149,6 +156,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             if (!string.IsNullOrEmpty(canalDto.Localidad))
                 canal.Localidad = canalDto.Localidad;
 
+            if (!string.IsNullOrEmpty(canalDto.Direccion)) // Nuevo campo
+                canal.Direccion = canalDto.Direccion;
+
             if (!string.IsNullOrEmpty(canalDto.Cuit))
                 canal.Cuit = canalDto.Cuit;
 
@@ -166,6 +176,21 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             if (!string.IsNullOrEmpty(canalDto.TipoCanal))
                 canal.TipoCanal = canalDto.TipoCanal;
+
+            if (!string.IsNullOrEmpty(canalDto.OpcionesCobro)) // Nuevo campo
+                canal.OpcionesCobro = canalDto.OpcionesCobro;
+
+            if (!string.IsNullOrEmpty(canalDto.Foto)) // Nuevo campo
+                canal.Foto = canalDto.Foto;
+
+            if (!string.IsNullOrEmpty(canalDto.TitularNombreCompleto)) // Nuevo campo
+                canal.TitularNombreCompleto = canalDto.TitularNombreCompleto;
+
+            if (!string.IsNullOrEmpty(canalDto.TitularTelefono)) // Nuevo campo
+                canal.TitularTelefono = canalDto.TitularTelefono;
+
+            if (!string.IsNullOrEmpty(canalDto.TitularEmail)) // Nuevo campo
+                canal.TitularEmail = canalDto.TitularEmail;
 
             await _canalRepository.UpdateAsync(canal);
         }

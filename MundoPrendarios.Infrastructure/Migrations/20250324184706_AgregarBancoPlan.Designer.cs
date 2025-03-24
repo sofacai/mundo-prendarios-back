@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MundoPrendarios.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using MundoPrendarios.Infrastructure.Data;
 namespace MundoPrendarios.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250324184706_AgregarBancoPlan")]
+    partial class AgregarBancoPlan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -392,17 +395,8 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<string>("Apellido")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("CantidadOperaciones")
-                        .HasColumnType("int");
-
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("FechaAlta")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FechaUltimaOperacion")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Nombre")
                         .HasColumnType("nvarchar(max)");

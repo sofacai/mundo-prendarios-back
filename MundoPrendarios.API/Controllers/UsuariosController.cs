@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MundoPrendarios.Core.DTOs;
+using MundoPrendarios.Core.Entities;
 using MundoPrendarios.Core.Services.Interfaces;
 using System.Security.Claims;
 
@@ -513,6 +514,30 @@ namespace MundoPrendarios.API.Controllers
                     message = "Error interno del servidor",
                     details = ex.Message
                 });
+            }
+        }
+
+        // En UsuarioController.cs
+        [HttpGet("vendor/estadisticas/{id}")]
+        [Authorize]
+        public async Task<ActionResult<VendorEstadisticasDto>> GetVendorEstadisticas(int id)
+        {
+            try
+            {
+                var estadisticas = await _usuarioService.ObtenerEstadisticasVendorAsync(id);
+                return Ok(estadisticas);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
             }
         }
     }

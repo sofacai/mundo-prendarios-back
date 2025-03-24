@@ -51,6 +51,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             };
         }
 
+        // Modificar el método CrearUsuarioAsync en UsuarioService
         public async Task<UsuarioDto> CrearUsuarioAsync(UsuarioCrearDto usuarioDto)
         {
             // Verificar si el email ya existe
@@ -72,6 +73,13 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Activo = true
             };
 
+            // Si es vendor (RolId = 3), establecer la fecha de alta
+            if (usuario.RolId == 3)
+            {
+                usuario.FechaAlta = usuarioDto.FechaAlta ?? DateTime.Now;
+                usuario.CantidadOperaciones = 0;
+            }
+
             await _usuarioRepository.AddAsync(usuario);
 
             return new UsuarioDto
@@ -82,7 +90,32 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Email = usuario.Email,
                 Telefono = usuario.Telefono,
                 RolId = usuario.RolId,
-                Activo = usuario.Activo
+                Activo = usuario.Activo,
+                FechaAlta = usuario.FechaAlta,
+                FechaUltimaOperacion = usuario.FechaUltimaOperacion,
+                CantidadOperaciones = usuario.CantidadOperaciones
+            };
+        }
+
+        // En UsuarioService.cs
+        public async Task<VendorEstadisticasDto> ObtenerEstadisticasVendorAsync(int vendorId)
+        {
+            var vendor = await _usuarioRepository.GetUsuarioByIdWithRolAsync(vendorId);
+
+            if (vendor == null)
+                throw new KeyNotFoundException("Vendor no encontrado");
+
+            if (vendor.RolId != 3)
+                throw new InvalidOperationException("El usuario no es un vendor");
+
+            return new VendorEstadisticasDto
+            {
+                Id = vendor.Id,
+                Nombre = vendor.Nombre,
+                Apellido = vendor.Apellido,
+                FechaAlta = vendor.FechaAlta,
+                FechaUltimaOperacion = vendor.FechaUltimaOperacion,
+                CantidadOperaciones = vendor.CantidadOperaciones
             };
         }
 
@@ -188,14 +221,17 @@ namespace MundoPrendarios.Core.Services.Implementaciones
         {
             return new UsuarioDto
             {
-                Id = usuario.Id,
-                Nombre = usuario.Nombre,
-                Apellido = usuario.Apellido,
-                Email = usuario.Email,
-                Telefono = usuario.Telefono,
-                RolId = usuario.RolId,
-                RolNombre = usuario.Rol?.Nombre ?? "Sin Rol", // Manejo de null
-                Activo = usuario.Activo
+        Id = usuario.Id,
+        Nombre = usuario.Nombre,
+        Apellido = usuario.Apellido,
+        Email = usuario.Email,
+        Telefono = usuario.Telefono,
+        RolId = usuario.RolId,
+        RolNombre = usuario.Rol?.Nombre ?? "Sin Rol", // Manejo de null
+        Activo = usuario.Activo,
+        FechaAlta = usuario.FechaAlta,
+        FechaUltimaOperacion = usuario.FechaUltimaOperacion,
+        CantidadOperaciones = usuario.CantidadOperaciones
             };
         }
 
@@ -260,4 +296,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             return subcanal != null && subcanal.CanalId == canalId;
         }
     }
+
+
+
 }

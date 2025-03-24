@@ -17,5 +17,8 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task<bool> VerificarVendorEnSubcanalAsync(int vendorId, int subcanalId);
         Task ActualizarUsuarioRestringidoAsync(int id, UsuarioCrearDto usuarioDto);
         Task<bool> VerificarCanalDeSubcanalAsync(int canalId, int subcanalId);
+        Task<VendorEstadisticasDto> ObtenerEstadisticasVendorAsync(int vendorId);
+
+
     }
 }

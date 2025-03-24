@@ -78,7 +78,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 ? string.Join(",", reglaCotizacionDto.CuotasAplicables)
                 : "";
             regla.Tasa = reglaCotizacionDto.Tasa;
-            regla.MontoFijo = reglaCotizacionDto.MontoFijo;
+            regla.GastoOtorgamiento = reglaCotizacionDto.MontoFijo;
 
             // Procesar las fechas
             if (!string.IsNullOrEmpty(reglaCotizacionDto.FechaInicioStr))

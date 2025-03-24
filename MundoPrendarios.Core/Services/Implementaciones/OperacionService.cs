@@ -90,10 +90,35 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             await _operacionRepository.AddAsync(operacion);
 
+            // Actualizar información del vendor
+            if (operacion.VendedorId > 0)
+            {
+                await ActualizarEstadisticasVendorAsync(operacion.VendedorId);
+            }
+
             // Cargar datos relacionados para el DTO
             var operacionDetallada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
             return _mapper.Map<Operacion, OperacionDto>(operacionDetallada);
         }
+
+        // Nuevo método para actualizar las estadísticas del vendor
+        public async Task ActualizarEstadisticasVendorAsync(int vendorId)
+        {
+            var vendor = await _usuarioRepository.GetByIdAsync(vendorId);
+
+            // Verificar que sea un vendor (RolId = 3)
+            if (vendor != null && vendor.RolId == 3)
+            {
+                // Actualizar fecha de última operación
+                vendor.FechaUltimaOperacion = DateTime.Now;
+
+                // Incrementar el contador de operaciones
+                vendor.CantidadOperaciones += 1;
+
+                await _usuarioRepository.UpdateAsync(vendor);
+            }
+        }
+
 
         public async Task<OperacionDto> ObtenerOperacionPorIdAsync(int id)
         {
@@ -152,9 +177,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             decimal cuotaMensual = (cotizacionDto.Monto * tasaMensual * (decimal)Math.Pow(1 + (double)tasaMensual, cotizacionDto.Meses)) /
                                  ((decimal)Math.Pow(1 + (double)tasaMensual, cotizacionDto.Meses) - 1);
 
-            if (regla.MontoFijo > 0)
+            if (regla.GastoOtorgamiento > 0)
             {
-                cuotaMensual += regla.MontoFijo / cotizacionDto.Meses;
+                cuotaMensual += regla.GastoOtorgamiento / cotizacionDto.Meses;
             }
 
             decimal montoTotal = cuotaMensual * cotizacionDto.Meses;
@@ -164,7 +189,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Monto = cotizacionDto.Monto,
                 Meses = cotizacionDto.Meses,
                 Tasa = regla.Tasa,
-                MontoFijo = regla.MontoFijo,
+                GastoOtorgamiento = regla.GastoOtorgamiento,
                 CuotaMensual = decimal.Round(cuotaMensual, 2),
                 MontoTotal = decimal.Round(montoTotal, 2),
                 PlanNombre = regla.Nombre,
@@ -288,9 +313,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             decimal cuotaMensual = (montoConGastos * tasaMensual * (decimal)Math.Pow(1 + (double)tasaMensual, cotizacionDto.Meses)) /
                                  ((decimal)Math.Pow(1 + (double)tasaMensual, cotizacionDto.Meses) - 1);
 
-            if (planElegido.MontoFijo > 0)
+            if (planElegido.GastoOtorgamiento > 0)
             {
-                cuotaMensual += planElegido.MontoFijo / cotizacionDto.Meses;
+                cuotaMensual += planElegido.GastoOtorgamiento / cotizacionDto.Meses;
             }
 
             decimal montoTotal = cuotaMensual * cotizacionDto.Meses;
@@ -300,7 +325,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Monto = cotizacionDto.Monto,
                 Meses = cotizacionDto.Meses,
                 Tasa = planElegido.Tasa,
-                MontoFijo = planElegido.MontoFijo,
+                GastoOtorgamiento = planElegido.GastoOtorgamiento,
                 CuotaMensual = decimal.Round(cuotaMensual, 2),
                 MontoTotal = decimal.Round(montoTotal, 2),
                 PlanNombre = planElegido.Nombre,
@@ -327,7 +352,47 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             operacionDto.ClienteId = cliente.Id;
 
             // Crear la operación
-            return await CrearOperacionAsync(operacionDto, usuarioId);
+            var operacion = new Operacion
+            {
+                Monto = operacionDto.Monto,
+                Meses = operacionDto.Meses,
+                Tasa = operacionDto.Tasa,
+                ClienteId = cliente.Id,
+                PlanId = operacionDto.PlanId,
+                VendedorId = operacionDto.VendedorId ?? usuarioId ?? 0,
+                SubcanalId = operacionDto.SubcanalId ?? 0,
+                CanalId = operacionDto.CanalId ?? cliente.CanalId,
+                FechaCreacion = DateTime.Now
+            };
+
+            // Si el usuario está logueado y es un vendor, asignar su subcanal si no viene especificado
+            if (usuarioId.HasValue && operacionDto.SubcanalId == null)
+            {
+                var usuario = await _usuarioRepository.GetByIdAsync(usuarioId.Value);
+                if (usuario != null && usuario.RolId == 3) // Rol Vendor
+                {
+                    // Obtener el primer subcanal al que pertenece el vendor
+                    var subcanalVendors = await _subcanalRepository.GetSubcanalesByVendorAsync(usuarioId.Value);
+                    if (subcanalVendors.Any())
+                    {
+                        operacion.SubcanalId = subcanalVendors.First().Id;
+                        // También asignar el canal basándonos en el subcanal
+                        operacion.CanalId = subcanalVendors.First().CanalId;
+                    }
+                }
+            }
+
+            await _operacionRepository.AddAsync(operacion);
+
+            // Actualizar información del vendor
+            if (operacion.VendedorId > 0)
+            {
+                await ActualizarEstadisticasVendorAsync(operacion.VendedorId);
+            }
+
+            // Cargar datos relacionados para el DTO
+            var operacionDetallada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
+            return _mapper.Map<Operacion, OperacionDto>(operacionDetallada);
         }
     }
 }
