@@ -100,6 +100,7 @@ builder.Services.AddScoped<IClienteVendorRepository, ClienteVendorRepository>();
 builder.Services.AddScoped<ICanalOficialComercialRepository, CanalOficialComercialRepository>();
 
 
+
 // Registrar servicios
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();

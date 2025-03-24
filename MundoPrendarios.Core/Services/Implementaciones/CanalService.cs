@@ -9,11 +9,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
     public class CanalService : ICanalService
     {
         private readonly ICanalRepository _canalRepository;
+        private readonly ICanalOficialComercialRepository _canalOficialComercialRepository;
+        private readonly ICanalOficialComercialService _canalOficialComercialService;
         private readonly IMapper _mapper;
 
-        public CanalService(ICanalRepository canalRepository, IMapper mapper)
+        public CanalService(
+            ICanalRepository canalRepository,
+            ICanalOficialComercialRepository canalOficialComercialRepository,
+            ICanalOficialComercialService canalOficialComercialService,
+            IMapper mapper)
         {
             _canalRepository = canalRepository;
+            _canalOficialComercialRepository = canalOficialComercialRepository;
+            _canalOficialComercialService = canalOficialComercialService;
             _mapper = mapper;
         }
 
@@ -26,26 +34,66 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 RazonSocial = canalDto.RazonSocial,
                 Provincia = canalDto.Provincia,
                 Localidad = canalDto.Localidad,
-                Direccion = canalDto.Direccion, // Nuevo campo
+                Direccion = canalDto.Direccion,
                 Cuit = canalDto.Cuit,
                 CBU = canalDto.CBU,
                 Alias = canalDto.Alias,
                 Banco = canalDto.Banco,
                 NumCuenta = canalDto.NumCuenta,
                 TipoCanal = canalDto.TipoCanal,
-                OpcionesCobro = canalDto.OpcionesCobro, // Nuevo campo
-                Foto = canalDto.Foto, // Nuevo campo
-                FechaAlta = DateTime.Now, // Nuevo campo (se establece automáticamente)
-                TitularNombreCompleto = canalDto.TitularNombreCompleto, // Nuevo campo
-                TitularTelefono = canalDto.TitularTelefono, // Nuevo campo
-                TitularEmail = canalDto.TitularEmail, // Nuevo campo
+                OpcionesCobro = canalDto.OpcionesCobro,
+                Foto = canalDto.Foto,
+                FechaAlta = DateTime.Now,
+                TitularNombreCompleto = canalDto.TitularNombreCompleto,
+                TitularTelefono = canalDto.TitularTelefono,
+                TitularEmail = canalDto.TitularEmail,
                 Activo = true
             };
 
             await _canalRepository.AddAsync(canal);
 
+            // Asignar Oficiales Comerciales al canal si se proporcionaron
+            var oficialesComerciales = new List<OficialComercialResumenDto>();
+            if (canalDto.OficialesComerciales != null && canalDto.OficialesComerciales.Any())
+            {
+                foreach (var ocId in canalDto.OficialesComerciales)
+                {
+                    try
+                    {
+                        var dto = new CanalOficialComercialCrearDto
+                        {
+                            CanalId = canal.Id,
+                            OficialComercialId = ocId
+                        };
+
+                        var asignacion = await _canalOficialComercialService.AsignarOficialComercialACanalAsync(dto);
+
+                        // Agregar a la lista para la respuesta
+                        if (asignacion != null)
+                        {
+                            oficialesComerciales.Add(new OficialComercialResumenDto
+                            {
+                                Id = asignacion.OficialComercialId,
+                                Nombre = asignacion.OficialComercialNombre.Split(' ')[0], // Aproximación simple
+                                Apellido = asignacion.OficialComercialNombre.Contains(' ') ?
+                                           asignacion.OficialComercialNombre.Substring(asignacion.OficialComercialNombre.IndexOf(' ') + 1) : "",
+                                FechaAsignacion = asignacion.FechaAsignacion
+                            });
+                        }
+                    }
+                    catch
+                    {
+                        // Continuar con el siguiente OC si hay error en uno
+                        continue;
+                    }
+                }
+            }
+
             // Mapear la entidad al DTO de respuesta
-            return _mapper.Map<Canal, CanalDto>(canal);
+            var canalDtoResult = _mapper.Map<Canal, CanalDto>(canal);
+            canalDtoResult.OficialesComerciales = oficialesComerciales;
+
+            return canalDtoResult;
         }
 
         public async Task<IReadOnlyList<CanalDto>> ObtenerTodosCanalesAsync()
@@ -76,6 +124,25 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                     }
                 }
 
+                // Obtener los oficiales comerciales asignados a este canal
+                var oficialesComerciales = await _canalOficialComercialRepository.GetOficialesComercialesByCanalAsync(canal.Id);
+                if (oficialesComerciales != null && oficialesComerciales.Any())
+                {
+                    canalDto.OficialesComerciales = oficialesComerciales
+                        .Select(oc => new OficialComercialResumenDto
+                        {
+                            Id = oc.OficialComercialId,
+                            Nombre = oc.OficialComercial?.Nombre ?? "",
+                            Apellido = oc.OficialComercial?.Apellido ?? "",
+                            FechaAsignacion = oc.FechaAsignacion
+                        })
+                        .ToList();
+                }
+                else
+                {
+                    canalDto.OficialesComerciales = new List<OficialComercialResumenDto>();
+                }
+
                 result.Add(canalDto);
             }
 
@@ -91,7 +158,28 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             }
 
             // Mapear la entidad al DTO
-            return _mapper.Map<Canal, CanalDto>(canal);
+            var canalDto = _mapper.Map<Canal, CanalDto>(canal);
+
+            // Obtener los oficiales comerciales asignados a este canal
+            var oficialesComerciales = await _canalOficialComercialRepository.GetOficialesComercialesByCanalAsync(id);
+            if (oficialesComerciales != null && oficialesComerciales.Any())
+            {
+                canalDto.OficialesComerciales = oficialesComerciales
+                    .Select(oc => new OficialComercialResumenDto
+                    {
+                        Id = oc.OficialComercialId,
+                        Nombre = oc.OficialComercial?.Nombre ?? "",
+                        Apellido = oc.OficialComercial?.Apellido ?? "",
+                        FechaAsignacion = oc.FechaAsignacion
+                    })
+                    .ToList();
+            }
+            else
+            {
+                canalDto.OficialesComerciales = new List<OficialComercialResumenDto>();
+            }
+
+            return canalDto;
         }
 
         public async Task<CanalDto> ObtenerCanalConDetallesAsync(int id)
@@ -120,6 +208,25 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         Plan = _mapper.Map<Plan, PlanDto>(planCanal.Plan)
                     });
                 }
+            }
+
+            // Obtener los oficiales comerciales asignados a este canal
+            var oficialesComerciales = await _canalOficialComercialRepository.GetOficialesComercialesByCanalAsync(id);
+            if (oficialesComerciales != null && oficialesComerciales.Any())
+            {
+                canalDto.OficialesComerciales = oficialesComerciales
+                    .Select(oc => new OficialComercialResumenDto
+                    {
+                        Id = oc.OficialComercialId,
+                        Nombre = oc.OficialComercial?.Nombre ?? "",
+                        Apellido = oc.OficialComercial?.Apellido ?? "",
+                        FechaAsignacion = oc.FechaAsignacion
+                    })
+                    .ToList();
+            }
+            else
+            {
+                canalDto.OficialesComerciales = new List<OficialComercialResumenDto>();
             }
 
             return canalDto;
@@ -156,7 +263,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             if (!string.IsNullOrEmpty(canalDto.Localidad))
                 canal.Localidad = canalDto.Localidad;
 
-            if (!string.IsNullOrEmpty(canalDto.Direccion)) // Nuevo campo
+            if (!string.IsNullOrEmpty(canalDto.Direccion))
                 canal.Direccion = canalDto.Direccion;
 
             if (!string.IsNullOrEmpty(canalDto.Cuit))
@@ -177,22 +284,52 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             if (!string.IsNullOrEmpty(canalDto.TipoCanal))
                 canal.TipoCanal = canalDto.TipoCanal;
 
-            if (!string.IsNullOrEmpty(canalDto.OpcionesCobro)) // Nuevo campo
+            if (!string.IsNullOrEmpty(canalDto.OpcionesCobro))
                 canal.OpcionesCobro = canalDto.OpcionesCobro;
 
-            if (!string.IsNullOrEmpty(canalDto.Foto)) // Nuevo campo
+            if (!string.IsNullOrEmpty(canalDto.Foto))
                 canal.Foto = canalDto.Foto;
 
-            if (!string.IsNullOrEmpty(canalDto.TitularNombreCompleto)) // Nuevo campo
+            if (!string.IsNullOrEmpty(canalDto.TitularNombreCompleto))
                 canal.TitularNombreCompleto = canalDto.TitularNombreCompleto;
 
-            if (!string.IsNullOrEmpty(canalDto.TitularTelefono)) // Nuevo campo
+            if (!string.IsNullOrEmpty(canalDto.TitularTelefono))
                 canal.TitularTelefono = canalDto.TitularTelefono;
 
-            if (!string.IsNullOrEmpty(canalDto.TitularEmail)) // Nuevo campo
+            if (!string.IsNullOrEmpty(canalDto.TitularEmail))
                 canal.TitularEmail = canalDto.TitularEmail;
 
             await _canalRepository.UpdateAsync(canal);
+
+            // Actualizar oficiales comerciales si se proporcionaron
+            if (canalDto.OficialesComerciales != null && canalDto.OficialesComerciales.Any())
+            {
+                // Obtener los OC actuales
+                var ocActuales = await _canalOficialComercialRepository.GetOficialesComercialesByCanalAsync(id);
+                var idsActuales = ocActuales.Select(oc => oc.OficialComercialId).ToList();
+
+                // Agregar nuevos OC que no estén ya asignados
+                foreach (var ocId in canalDto.OficialesComerciales.Where(ocId => !idsActuales.Contains(ocId)))
+                {
+                    var dto = new CanalOficialComercialCrearDto
+                    {
+                        CanalId = id,
+                        OficialComercialId = ocId
+                    };
+
+                    await _canalOficialComercialService.AsignarOficialComercialACanalAsync(dto);
+                }
+
+                // Desasignar OC que ya no estén en la lista
+                foreach (var ocActual in ocActuales)
+                {
+                    if (!canalDto.OficialesComerciales.Contains(ocActual.OficialComercialId))
+                    {
+                        await _canalOficialComercialService.DesasignarOficialComercialDeCanalAsync(
+                            id, ocActual.OficialComercialId);
+                    }
+                }
+            }
         }
     }
 }

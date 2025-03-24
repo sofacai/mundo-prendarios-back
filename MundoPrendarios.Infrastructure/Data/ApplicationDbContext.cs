@@ -177,9 +177,8 @@ namespace MundoPrendarios.Infrastructure.Data
                 .Property(o => o.Tasa)
                 .HasColumnType("decimal(18,2)");
 
-            // Configuración para CanalOficialComercial
             modelBuilder.Entity<CanalOficialComercial>()
-                .HasKey(co => co.Id);
+           .HasKey(co => co.Id);
 
             modelBuilder.Entity<CanalOficialComercial>()
                 .HasOne(co => co.Canal)
@@ -193,7 +192,7 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasForeignKey(co => co.OficialComercialId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Índice para evitar duplicados
+            // Create a unique index to prevent duplicates
             modelBuilder.Entity<CanalOficialComercial>()
                 .HasIndex(co => new { co.CanalId, co.OficialComercialId })
                 .IsUnique();

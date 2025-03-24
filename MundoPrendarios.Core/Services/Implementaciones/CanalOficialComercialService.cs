@@ -44,17 +44,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             var existeRelacion = await _canalOficialComercialRepository.GetCanalOficialComercialAsync(dto.CanalId, dto.OficialComercialId);
             if (existeRelacion != null)
             {
-                // Si existe pero no está activa, la reactivamos
-                if (!existeRelacion.Activo)
-                {
-                    existeRelacion.Activo = true;
-                    existeRelacion.FechaAsignacion = DateTime.UtcNow;
-                    await _canalOficialComercialRepository.UpdateAsync(existeRelacion);
-
-                    return MapToDto(existeRelacion, canal, oficialComercial);
-                }
-
-                throw new InvalidOperationException("El oficial comercial ya está asignado a este canal");
+                throw new InvalidOperationException("Este canal ya tiene asignado este Oficial Comercial");
             }
 
             // Crear la nueva relación
@@ -69,11 +59,31 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             await _canalOficialComercialRepository.AddAsync(nuevaRelacion);
 
             // Mapear la relación creada al DTO de respuesta
-            return MapToDto(nuevaRelacion, canal, oficialComercial);
+            return new CanalOficialComercialDto
+            {
+                Id = nuevaRelacion.Id,
+                CanalId = nuevaRelacion.CanalId,
+                CanalNombre = canal.NombreFantasia,
+                OficialComercialId = nuevaRelacion.OficialComercialId,
+                OficialComercialNombre = $"{oficialComercial.Nombre} {oficialComercial.Apellido}",
+                FechaAsignacion = nuevaRelacion.FechaAsignacion,
+                Activo = nuevaRelacion.Activo
+            };
         }
 
         public async Task<bool> DesasignarOficialComercialDeCanalAsync(int canalId, int oficialComercialId)
         {
+            // Verificar que el canal existe
+            var canal = await _canalRepository.GetByIdAsync(canalId);
+            if (canal == null)
+                throw new KeyNotFoundException($"No existe un canal con el ID {canalId}");
+
+            // Verificar que el oficial comercial existe
+            var oficialComercial = await _usuarioRepository.GetByIdAsync(oficialComercialId);
+            if (oficialComercial == null)
+                throw new KeyNotFoundException($"No existe un oficial comercial con el ID {oficialComercialId}");
+
+            // Buscar la relación
             var relacion = await _canalOficialComercialRepository.GetCanalOficialComercialAsync(canalId, oficialComercialId);
             if (relacion == null || !relacion.Activo)
                 return false;
@@ -96,7 +106,20 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             var resultado = new List<CanalOficialComercialDto>();
             foreach (var rel in relaciones)
             {
-                resultado.Add(MapToDto(rel, canal, rel.OficialComercial));
+                var oficialComercial = rel.OficialComercial;
+                if (oficialComercial != null)
+                {
+                    resultado.Add(new CanalOficialComercialDto
+                    {
+                        Id = rel.Id,
+                        CanalId = rel.CanalId,
+                        CanalNombre = canal.NombreFantasia,
+                        OficialComercialId = rel.OficialComercialId,
+                        OficialComercialNombre = $"{oficialComercial.Nombre} {oficialComercial.Apellido}",
+                        FechaAsignacion = rel.FechaAsignacion,
+                        Activo = rel.Activo
+                    });
+                }
             }
 
             return resultado;
@@ -114,21 +137,6 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             var resultado = _mapper.Map<IEnumerable<CanalDto>>(canales);
 
             return resultado;
-        }
-
-        // Método auxiliar para mapear a DTO
-        private CanalOficialComercialDto MapToDto(CanalOficialComercial relacion, Canal canal, Usuario oficialComercial)
-        {
-            return new CanalOficialComercialDto
-            {
-                Id = relacion.Id,
-                CanalId = relacion.CanalId,
-                CanalNombre = canal.NombreFantasia,
-                OficialComercialId = relacion.OficialComercialId,
-                OficialComercialNombre = $"{oficialComercial.Nombre} {oficialComercial.Apellido}",
-                FechaAsignacion = relacion.FechaAsignacion,
-                Activo = relacion.Activo
-            };
         }
     }
 }

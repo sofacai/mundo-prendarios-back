@@ -14,7 +14,7 @@ namespace MundoPrendarios.Infrastructure.Repositories
         public async Task<CanalOficialComercial> GetCanalOficialComercialAsync(int canalId, int oficialComercialId)
         {
             return await _dbContext.CanalOficialesComerciales
-                .FirstOrDefaultAsync(co => co.CanalId == canalId && co.OficialComercialId == oficialComercialId && co.Activo);
+                .FirstOrDefaultAsync(co => co.CanalId == canalId && co.OficialComercialId == oficialComercialId);
         }
 
         public async Task<IReadOnlyList<CanalOficialComercial>> GetOficialesComercialesByCanalAsync(int canalId)

@@ -13,15 +13,18 @@ namespace MundoPrendarios.API.Controllers
         private readonly ICanalService _canalService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IPlanCanalService _planCanalService;
+        private readonly ICanalOficialComercialService _canalOficialComercialService;
 
         public CanalController(
          ICanalService canalService,
          ICurrentUserService currentUserService,
-         IPlanCanalService planCanalService) 
+         IPlanCanalService planCanalService,
+         ICanalOficialComercialService canalOficialComercialService)
         {
             _canalService = canalService;
             _currentUserService = currentUserService;
             _planCanalService = planCanalService;
+            _canalOficialComercialService = canalOficialComercialService;
         }
 
         // Método auxiliar para verificar permisos
@@ -209,7 +212,6 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
-
         // POST: api/Canal/5/plan/1
         [HttpPost("{canalId}/plan/{planId}")]
         public async Task<ActionResult<PlanCanalDto>> AsignarPlanACanal(int canalId, int planId)
@@ -294,29 +296,15 @@ namespace MundoPrendarios.API.Controllers
 
             try
             {
-                // Imprimir para debug
-                Console.WriteLine($"Intentando desactivar PlanCanalId: {planCanalId}");
-
                 await _planCanalService.ActivarDesactivarPlanCanalAsync(planCanalId, false);
-
-                // Verificar después de la operación
-                var planesCanal = await _planCanalService.ObtenerPlanesPorCanalAsync(1); // Asume canal 1 para debug
-                Console.WriteLine("Estado actual de los planes del canal:");
-                foreach (var pc in planesCanal)
-                {
-                    Console.WriteLine($"PlanCanalId: {pc.Id}, Activo: {pc.Activo}");
-                }
-
                 return Ok(new { mensaje = "Plan desactivado para este canal correctamente." });
             }
             catch (KeyNotFoundException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
                 return NotFound(new { mensaje = ex.Message });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
                 return StatusCode(500, new { mensaje = ex.Message });
             }
         }
@@ -345,7 +333,90 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
+        // ENDPOINTS PARA OFICIALES COMERCIALES
 
+        // POST: api/Canal/5/oficialcomercial/3
+        [HttpPost("{canalId}/oficialcomercial/{oficialComercialId}")]
+        public async Task<ActionResult<CanalOficialComercialDto>> AsignarOficialComercialACanal(int canalId, int oficialComercialId)
+        {
+            // Verificar permisos
+            var (tienePermiso, respuestaError) = VerificarPermiso();
+            if (!tienePermiso)
+                return respuestaError;
 
+            try
+            {
+                var dto = new CanalOficialComercialCrearDto
+                {
+                    CanalId = canalId,
+                    OficialComercialId = oficialComercialId
+                };
+                var resultado = await _canalOficialComercialService.AsignarOficialComercialACanalAsync(dto);
+                return Ok(resultado);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // GET: api/Canal/5/oficialescomerciales
+        [HttpGet("{canalId}/oficialescomerciales")]
+        public async Task<ActionResult<IEnumerable<CanalOficialComercialDto>>> ObtenerOficialesComercialesPorCanal(int canalId)
+        {
+            // Verificar permisos
+            var (tienePermiso, respuestaError) = VerificarPermiso();
+            if (!tienePermiso)
+                return respuestaError;
+
+            try
+            {
+                var oficialesComerciales = await _canalOficialComercialService.ObtenerOficialesComercialesPorCanalAsync(canalId);
+                return Ok(oficialesComerciales);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // DELETE: api/Canal/5/oficialcomercial/3
+        [HttpDelete("{canalId}/oficialcomercial/{oficialComercialId}")]
+        public async Task<ActionResult> DesasignarOficialComercialDeCanal(int canalId, int oficialComercialId)
+        {
+            // Verificar permisos
+            var (tienePermiso, respuestaError) = VerificarPermiso();
+            if (!tienePermiso)
+                return respuestaError;
+
+            try
+            {
+                var resultado = await _canalOficialComercialService.DesasignarOficialComercialDeCanalAsync(canalId, oficialComercialId);
+                if (resultado)
+                {
+                    return Ok(new { mensaje = "Oficial comercial desasignado del canal correctamente." });
+                }
+                else
+                {
+                    return NotFound(new { mensaje = "No se encontró la relación entre el canal y el oficial comercial." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
     }
 }

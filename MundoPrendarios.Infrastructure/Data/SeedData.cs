@@ -21,7 +21,9 @@ namespace MundoPrendarios.Infrastructure.Data
                     {
                         new Rol { Id = 1, Nombre = "Admin" },
                         new Rol { Id = 2, Nombre = "AdminCanal" },
-                        new Rol { Id = 3, Nombre = "Vendor" }
+                        new Rol { Id = 3, Nombre = "Vendor" },
+                        new Rol { Id = 4, Nombre = "OficialComercial" }
+
                     };
 
                     await context.Roles.AddRangeAsync(roles);

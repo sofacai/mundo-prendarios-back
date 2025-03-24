@@ -24,8 +24,10 @@
         public string TitularTelefono { get; set; } // Nuevo campo
         public string TitularEmail { get; set; } // Nuevo campo
 
+        public List<OficialComercialResumenDto> OficialesComerciales { get; set; } = new List<OficialComercialResumenDto>();
         public List<SubcanalSimpleDto> Subcanales { get; set; } = new List<SubcanalSimpleDto>();
         public List<PlanCanalDto> PlanesCanal { get; set; } = new List<PlanCanalDto>();
+
     }
 
     public class CanalCrearDto
@@ -48,6 +50,9 @@
         public string TitularNombreCompleto { get; set; } // Nuevo campo
         public string TitularTelefono { get; set; } // Nuevo campo
         public string TitularEmail { get; set; } // Nuevo campo
+
+        public List<int> OficialesComerciales { get; set; } = new List<int>();
+
     }
 
     public class SubcanalSimpleDto

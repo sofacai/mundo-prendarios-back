@@ -58,7 +58,13 @@ namespace MundoPrendarios.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { mensaje = ex.Message });
+                // Log the detailed exception
+                Console.WriteLine($"Error en AsignarOficialComercial: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                return StatusCode(500, new { mensaje = "Error al asignar oficial comercial al canal: " + ex.Message });
             }
         }
 
