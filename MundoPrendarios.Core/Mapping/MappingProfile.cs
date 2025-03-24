@@ -133,6 +133,22 @@ namespace MundoPrendarios.Core.Mapping
 
             CreateMap<ClienteVendorCrearDto, ClienteVendors>();
             CreateMap<Usuario, VendorResumenDto>();
+
+
+            // CanalOficialComercial mappings
+            CreateMap<CanalOficialComercial, CanalOficialComercialDto>()
+                .ForMember(dest => dest.CanalNombre, opt =>
+                    opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : ""))
+                .ForMember(dest => dest.OficialComercialNombre, opt =>
+                    opt.MapFrom(src => src.OficialComercial != null ? $"{src.OficialComercial.Nombre} {src.OficialComercial.Apellido}" : ""));
+
+            CreateMap<CanalOficialComercialCrearDto, CanalOficialComercial>();
+            CreateMap<Usuario, OficialComercialResumenDto>();
+
+            // Actualizar CanalDto para incluir la lista de oficiales comerciales
+            CreateMap<Canal, CanalDto>()
+                .ForMember(dest => dest.Subcanales, opt => opt.MapFrom(src => src.Subcanales))
+                .ForMember(dest => dest.PlanesCanal, opt => opt.MapFrom(src => src.PlanesCanales));
         }
 
         private List<int> ConvertStringToIntList(string input)

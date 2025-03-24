@@ -23,6 +23,7 @@ namespace MundoPrendarios.Infrastructure.Data
         public DbSet<PlanCanal> PlanesCanales { get; set; }
         public DbSet<ReglaCotizacion> ReglasCotizacion { get; set; }
         public DbSet<ClienteVendors> ClienteVendors { get; set; }
+        public DbSet<CanalOficialComercial> CanalOficialesComerciales { get; set; }
 
 
 
@@ -176,11 +177,33 @@ namespace MundoPrendarios.Infrastructure.Data
                 .Property(o => o.Tasa)
                 .HasColumnType("decimal(18,2)");
 
+            // Configuración para CanalOficialComercial
+            modelBuilder.Entity<CanalOficialComercial>()
+                .HasKey(co => co.Id);
+
+            modelBuilder.Entity<CanalOficialComercial>()
+                .HasOne(co => co.Canal)
+                .WithMany()
+                .HasForeignKey(co => co.CanalId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CanalOficialComercial>()
+                .HasOne(co => co.OficialComercial)
+                .WithMany()
+                .HasForeignKey(co => co.OficialComercialId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Índice para evitar duplicados
+            modelBuilder.Entity<CanalOficialComercial>()
+                .HasIndex(co => new { co.CanalId, co.OficialComercialId })
+                .IsUnique();
+
             // Seed data para roles
             modelBuilder.Entity<Rol>().HasData(
                 new Rol { Id = 1, Nombre = "Admin" },
                 new Rol { Id = 2, Nombre = "AdminCanal" },
-                new Rol { Id = 3, Nombre = "Vendor" }
+                new Rol { Id = 3, Nombre = "Vendor" },
+                new Rol { Id = 4, Nombre = "OficialComercial" }
             );
 
 

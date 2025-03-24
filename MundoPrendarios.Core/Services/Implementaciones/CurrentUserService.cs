@@ -38,5 +38,10 @@ namespace MundoPrendarios.Infrastructure.Services
         {
             return GetUserRole() == "Vendor";
         }
+
+        public bool IsOficialComercial()
+        {
+            return GetUserRole() == "OficialComercial";
+        }
     }
 }

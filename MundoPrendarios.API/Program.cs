@@ -97,6 +97,8 @@ builder.Services.AddScoped<IOperacionRepository, OperacionRepository>();
 builder.Services.AddScoped<IGastoRepository, GastoRepository>();
 builder.Services.AddScoped<IReglaCotizacionRepository, ReglaCotizacionRepository>();
 builder.Services.AddScoped<IClienteVendorRepository, ClienteVendorRepository>();
+builder.Services.AddScoped<ICanalOficialComercialRepository, CanalOficialComercialRepository>();
+
 
 // Registrar servicios
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -111,6 +113,8 @@ builder.Services.AddScoped<IOperacionService, OperacionService>();
 builder.Services.AddScoped<IPlanCanalService, PlanCanalService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IClienteVendorService, ClienteVendorService>();
+builder.Services.AddScoped<ICanalOficialComercialService, CanalOficialComercialService>();
+
 
 // Agregar AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));

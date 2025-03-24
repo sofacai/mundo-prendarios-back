@@ -64,7 +64,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             var gastoDefault = new Gasto
             {
                 Nombre = "Gasto",
-                Porcentaje = 8.0m,
+                Porcentaje = 7.0m,
                 SubcanalId = subcanal.Id
             };
 

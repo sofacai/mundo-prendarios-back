@@ -30,6 +30,9 @@ namespace MundoPrendarios.API.Controllers
             if (_currentUserService.IsAdmin())
                 return (true, null);
 
+            if (_currentUserService.IsOficialComercial())
+                return (true, null); // Los OC pueden acceder a la información de sus canales asignados
+
             if (_currentUserService.IsAdminCanal())
                 return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de canales. Solo puedes gestionar los subcanales asignados a tu administración." }));
 

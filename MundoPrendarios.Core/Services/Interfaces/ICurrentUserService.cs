@@ -7,5 +7,7 @@
         bool IsAdmin();
         bool IsAdminCanal();
         bool IsVendor();
+        bool IsOficialComercial();
+
     }
 }
