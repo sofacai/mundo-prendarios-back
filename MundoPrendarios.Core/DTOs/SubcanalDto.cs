@@ -31,6 +31,7 @@
         public int Id { get; set; }
         public string Nombre { get; set; }
         public decimal Porcentaje { get; set; }
+        public int SubcanalId { get; set; }
     }
 
     public class GastoCrearDto

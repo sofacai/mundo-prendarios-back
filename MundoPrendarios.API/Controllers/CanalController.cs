@@ -28,21 +28,33 @@ namespace MundoPrendarios.API.Controllers
         }
 
         // Método auxiliar para verificar permisos
-        private (bool tienePermiso, ActionResult respuestaError) VerificarPermiso()
+        private async Task<(bool tienePermiso, ActionResult respuestaError, List<int> canalesPermitidos)> VerificarPermiso()
         {
             if (_currentUserService.IsAdmin())
-                return (true, null);
+                return (true, null, null); // Admin puede ver todo
 
             if (_currentUserService.IsOficialComercial())
-                return (true, null); // Los OC pueden acceder a la información de sus canales asignados
+            {
+                int usuarioId = _currentUserService.GetUserId();
+                var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                if (canalesAsignados != null && canalesAsignados.Any())
+                {
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+                    return (true, null, canalesIds); // OC puede ver solo sus canales asignados
+                }
+                else
+                {
+                    return (false, StatusCode(403, new { mensaje = "No tienes canales asignados." }), null);
+                }
+            }
 
             if (_currentUserService.IsAdminCanal())
-                return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de canales. Solo puedes gestionar los subcanales asignados a tu administración." }));
+                return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de canales. Solo puedes gestionar los subcanales asignados a tu administración." }), null);
 
             if (_currentUserService.IsVendor())
-                return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de canales. Solo puedes ver información relacionada con tus operaciones." }));
+                return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de canales. Solo puedes ver información relacionada con tus operaciones." }), null);
 
-            return (false, StatusCode(403, new { mensaje = "No tienes los permisos necesarios para realizar esta acción." }));
+            return (false, StatusCode(403, new { mensaje = "No tienes los permisos necesarios para realizar esta acción." }), null);
         }
 
         // GET: api/Canal
@@ -50,13 +62,20 @@ namespace MundoPrendarios.API.Controllers
         public async Task<ActionResult<IEnumerable<CanalDto>>> GetCanales()
         {
             // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
+            var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
 
             try
             {
                 var canales = await _canalService.ObtenerTodosCanalesAsync();
+
+                // Si es Oficial Comercial, filtrar solo los canales asignados
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null)
+                {
+                    canales = canales.Where(c => canalesPermitidos.Contains(c.Id)).ToList();
+                }
+
                 return Ok(canales);
             }
             catch (Exception ex)
@@ -70,9 +89,15 @@ namespace MundoPrendarios.API.Controllers
         public async Task<ActionResult<CanalDto>> GetCanal(int id)
         {
             // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
+            var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
+
+            // Si es Oficial Comercial, verificar que el canal solicitado esté en sus asignados
+            if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(id))
+            {
+                return StatusCode(403, new { mensaje = "No tienes permiso para acceder a este canal." });
+            }
 
             try
             {
@@ -94,9 +119,15 @@ namespace MundoPrendarios.API.Controllers
         public async Task<ActionResult<CanalDto>> GetCanalDetalles(int id)
         {
             // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
+            var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
+
+            // Si es Oficial Comercial, verificar que el canal solicitado esté en sus asignados
+            if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(id))
+            {
+                return StatusCode(403, new { mensaje = "No tienes permiso para acceder a este canal." });
+            }
 
             try
             {
@@ -117,15 +148,14 @@ namespace MundoPrendarios.API.Controllers
         [HttpPost]
         public async Task<ActionResult<CanalDto>> CreateCanal(CanalCrearDto canalDto)
         {
-            // Verificar permisos (código existente)
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
+            // Verificar permisos - Solo Admin puede crear canales
+            if (!_currentUserService.IsAdmin())
+            {
+                return StatusCode(403, new { mensaje = "Solo los administradores pueden crear canales." });
+            }
 
             try
             {
-                // El método CrearCanalAsync ya debería estar actualizado en CanalService
-                // para manejar los nuevos campos de CanalCrearDto
                 var createdCanal = await _canalService.CrearCanalAsync(canalDto);
                 return CreatedAtAction("GetCanal", new { id = createdCanal.Id }, createdCanal);
             }
@@ -139,15 +169,19 @@ namespace MundoPrendarios.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCanal(int id, CanalCrearDto canalDto)
         {
-            // Verificar permisos (código existente)
-            var (tienePermiso, respuestaError) = VerificarPermiso();
+            // Verificar permisos
+            var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
 
+            // Si es Oficial Comercial, verificar que el canal solicitado esté en sus asignados
+            if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(id))
+            {
+                return StatusCode(403, new { mensaje = "No tienes permiso para modificar este canal." });
+            }
+
             try
             {
-                // El método ActualizarCanalAsync ya debería estar actualizado en CanalService
-                // para manejar los nuevos campos de CanalCrearDto
                 await _canalService.ActualizarCanalAsync(id, canalDto);
                 var canal = await _canalService.ObtenerCanalPorIdAsync(id);
                 return Ok(canal);
@@ -166,10 +200,11 @@ namespace MundoPrendarios.API.Controllers
         [HttpPatch("{id}/activar")]
         public async Task<IActionResult> ActivateCanal(int id)
         {
-            // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
+            // Solo Admin puede activar canales
+            if (!_currentUserService.IsAdmin())
+            {
+                return StatusCode(403, new { mensaje = "Solo los administradores pueden activar canales." });
+            }
 
             try
             {
@@ -191,10 +226,11 @@ namespace MundoPrendarios.API.Controllers
         [HttpPatch("{id}/desactivar")]
         public async Task<IActionResult> DeactivateCanal(int id)
         {
-            // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
+            // Solo Admin puede desactivar canales
+            if (!_currentUserService.IsAdmin())
+            {
+                return StatusCode(403, new { mensaje = "Solo los administradores pueden desactivar canales." });
+            }
 
             try
             {
@@ -217,9 +253,15 @@ namespace MundoPrendarios.API.Controllers
         public async Task<ActionResult<PlanCanalDto>> AsignarPlanACanal(int canalId, int planId)
         {
             // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
+            var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
+
+            // Si es Oficial Comercial, verificar que el canal solicitado esté en sus asignados
+            if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(canalId))
+            {
+                return StatusCode(403, new { mensaje = "No tienes permiso para asignar planes a este canal." });
+            }
 
             try
             {
@@ -246,9 +288,15 @@ namespace MundoPrendarios.API.Controllers
         public async Task<ActionResult<IEnumerable<PlanCanalDto>>> ObtenerPlanesDeCanal(int id)
         {
             // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
+            var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
+
+            // Si es Oficial Comercial, verificar que el canal solicitado esté en sus asignados
+            if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(id))
+            {
+                return StatusCode(403, new { mensaje = "No tienes permiso para ver los planes de este canal." });
+            }
 
             try
             {
@@ -265,13 +313,26 @@ namespace MundoPrendarios.API.Controllers
         [HttpPatch("planes/{planCanalId}/activar")]
         public async Task<ActionResult> ActivarPlanCanal(int planCanalId)
         {
-            // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
-
+            // Para esta operación, primero necesitamos saber a qué canal pertenece el planCanal
             try
             {
+                var planCanal = await _planCanalService.ObtenerPlanCanalPorIdAsync(planCanalId);
+                if (planCanal == null)
+                {
+                    return NotFound(new { mensaje = "No se encontró el plan asociado al canal." });
+                }
+
+                // Verificar permisos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Si es Oficial Comercial, verificar que el canal del plan esté en sus asignados
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(planCanal.CanalId))
+                {
+                    return StatusCode(403, new { mensaje = "No tienes permiso para activar planes en este canal." });
+                }
+
                 await _planCanalService.ActivarDesactivarPlanCanalAsync(planCanalId, true);
                 return Ok(new { mensaje = "Plan activado para este canal correctamente." });
             }
@@ -289,13 +350,26 @@ namespace MundoPrendarios.API.Controllers
         [HttpPatch("planes/{planCanalId}/desactivar")]
         public async Task<ActionResult> DesactivarPlanCanal(int planCanalId)
         {
-            // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
-
+            // Para esta operación, primero necesitamos saber a qué canal pertenece el planCanal
             try
             {
+                var planCanal = await _planCanalService.ObtenerPlanCanalPorIdAsync(planCanalId);
+                if (planCanal == null)
+                {
+                    return NotFound(new { mensaje = "No se encontró el plan asociado al canal." });
+                }
+
+                // Verificar permisos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Si es Oficial Comercial, verificar que el canal del plan esté en sus asignados
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(planCanal.CanalId))
+                {
+                    return StatusCode(403, new { mensaje = "No tienes permiso para desactivar planes en este canal." });
+                }
+
                 await _planCanalService.ActivarDesactivarPlanCanalAsync(planCanalId, false);
                 return Ok(new { mensaje = "Plan desactivado para este canal correctamente." });
             }
@@ -313,13 +387,26 @@ namespace MundoPrendarios.API.Controllers
         [HttpDelete("planes/{planCanalId}")]
         public async Task<ActionResult> EliminarPlanCanal(int planCanalId)
         {
-            // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
-
+            // Para esta operación, primero necesitamos saber a qué canal pertenece el planCanal
             try
             {
+                var planCanal = await _planCanalService.ObtenerPlanCanalPorIdAsync(planCanalId);
+                if (planCanal == null)
+                {
+                    return NotFound(new { mensaje = "No se encontró el plan asociado al canal." });
+                }
+
+                // Verificar permisos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Si es Oficial Comercial, verificar que el canal del plan esté en sus asignados
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(planCanal.CanalId))
+                {
+                    return StatusCode(403, new { mensaje = "No tienes permiso para eliminar planes de este canal." });
+                }
+
                 await _planCanalService.EliminarPlanCanalAsync(planCanalId);
                 return Ok(new { mensaje = "Plan eliminado de este canal correctamente." });
             }
@@ -339,10 +426,11 @@ namespace MundoPrendarios.API.Controllers
         [HttpPost("{canalId}/oficialcomercial/{oficialComercialId}")]
         public async Task<ActionResult<CanalOficialComercialDto>> AsignarOficialComercialACanal(int canalId, int oficialComercialId)
         {
-            // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
+            // Solo Admin puede asignar oficiales comerciales
+            if (!_currentUserService.IsAdmin())
+            {
+                return StatusCode(403, new { mensaje = "Solo los administradores pueden asignar oficiales comerciales a canales." });
+            }
 
             try
             {
@@ -373,9 +461,15 @@ namespace MundoPrendarios.API.Controllers
         public async Task<ActionResult<IEnumerable<CanalOficialComercialDto>>> ObtenerOficialesComercialesPorCanal(int canalId)
         {
             // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
+            var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
             if (!tienePermiso)
                 return respuestaError;
+
+            // Si es Oficial Comercial, verificar que el canal solicitado esté en sus asignados
+            if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(canalId))
+            {
+                return StatusCode(403, new { mensaje = "No tienes permiso para ver los oficiales comerciales de este canal." });
+            }
 
             try
             {
@@ -396,10 +490,11 @@ namespace MundoPrendarios.API.Controllers
         [HttpDelete("{canalId}/oficialcomercial/{oficialComercialId}")]
         public async Task<ActionResult> DesasignarOficialComercialDeCanal(int canalId, int oficialComercialId)
         {
-            // Verificar permisos
-            var (tienePermiso, respuestaError) = VerificarPermiso();
-            if (!tienePermiso)
-                return respuestaError;
+            // Solo Admin puede desasignar oficiales comerciales
+            if (!_currentUserService.IsAdmin())
+            {
+                return StatusCode(403, new { mensaje = "Solo los administradores pueden desasignar oficiales comerciales de canales." });
+            }
 
             try
             {

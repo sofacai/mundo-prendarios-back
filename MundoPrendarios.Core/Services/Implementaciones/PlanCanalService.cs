@@ -108,5 +108,33 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             await _planCanalRepository.DeleteAsync(planCanal);
         }
+
+        public async Task<PlanCanalDto> ObtenerPlanCanalPorIdAsync(int planCanalId)
+        {
+            var planCanal = await _planCanalRepository.GetByIdAsync(planCanalId);
+            if (planCanal == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la relación Plan-Canal con ID {planCanalId}");
+            }
+
+            // Cargar el plan si no está cargado
+            if (planCanal.Plan == null)
+            {
+                var plan = await _planRepository.GetByIdAsync(planCanal.PlanId);
+                planCanal.Plan = plan;
+            }
+
+            // Construir el DTO
+            var resultado = new PlanCanalDto
+            {
+                Id = planCanal.Id,
+                PlanId = planCanal.PlanId,
+                CanalId = planCanal.CanalId,
+                Activo = planCanal.Activo,
+                Plan = _mapper.Map<Plan, PlanDto>(planCanal.Plan)
+            };
+
+            return resultado;
+        }
     }
 }

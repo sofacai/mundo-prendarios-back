@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MundoPrendarios.Core.DTOs;
 using MundoPrendarios.Core.Services.Interfaces;
+using System.Linq;
 
 namespace MundoPrendarios.API.Controllers
 {
@@ -12,29 +13,49 @@ namespace MundoPrendarios.API.Controllers
     {
         private readonly IOperacionService _operacionService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ICanalOficialComercialService _canalOficialComercialService;
+        private readonly ISubcanalService _subcanalService;
 
-        public OperacionController(IOperacionService operacionService, ICurrentUserService currentUserService)
+        public OperacionController(
+            IOperacionService operacionService,
+            ICurrentUserService currentUserService,
+            ICanalOficialComercialService canalOficialComercialService,
+            ISubcanalService subcanalService)
         {
             _operacionService = operacionService;
             _currentUserService = currentUserService;
+            _canalOficialComercialService = canalOficialComercialService;
+            _subcanalService = subcanalService;
         }
 
-        // Método auxiliar para verificar permisos
-        private (bool tienePermiso, ActionResult respuestaError) VerificarPermiso()
+        // Método auxiliar para verificar permisos y obtener canales permitidos
+        private async Task<(bool tienePermiso, ActionResult respuestaError, List<int> canalesPermitidos)> VerificarPermiso()
         {
             if (_currentUserService.IsAdmin())
-                return (true, null);
+                return (true, null, null); // Admin puede ver todo
 
             if (_currentUserService.IsAdminCanal())
-                return (true, null);
+                return (true, null, null);
 
             if (_currentUserService.IsVendor())
-                return (true, null);
+                return (true, null, null);
 
             if (_currentUserService.IsOficialComercial())
-                return (true, null);
+            {
+                int usuarioId = _currentUserService.GetUserId();
+                var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                if (canalesAsignados != null && canalesAsignados.Any())
+                {
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+                    return (true, null, canalesIds); // OC puede ver solo operaciones de sus canales asignados
+                }
+                else
+                {
+                    return (false, StatusCode(403, new { mensaje = "No tienes canales asignados." }), null);
+                }
+            }
 
-            return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a las operaciones." }));
+            return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a las operaciones." }), null);
         }
 
         // POST: api/Operacion/cotizar/publico
@@ -64,9 +85,26 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                var (tienePermiso, respuestaError) = VerificarPermiso();
+                // Verificar permisos generales
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
                 if (!tienePermiso)
                     return respuestaError;
+
+                // Si el usuario es OficialComercial y se proporcionó un SubcanalId, verificar si tiene acceso
+                if (_currentUserService.IsOficialComercial() && cotizacionDto.SubcanalId.HasValue)
+                {
+                    var subcanal = await _subcanalService.ObtenerSubcanalPorIdAsync(cotizacionDto.SubcanalId.Value);
+                    if (subcanal == null)
+                    {
+                        return NotFound(new { mensaje = "No se encontró el subcanal especificado." });
+                    }
+
+                    // Verificar que el subcanal pertenezca a un canal asignado al OC
+                    if (canalesPermitidos != null && !canalesPermitidos.Contains(subcanal.CanalId))
+                    {
+                        return StatusCode(403, new { mensaje = "No tienes permiso para cotizar en este subcanal." });
+                    }
+                }
 
                 int usuarioId = _currentUserService.GetUserId();
                 var resultado = await _operacionService.CotizarConLoginAsync(cotizacionDto, usuarioId);
@@ -93,20 +131,40 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                var (tienePermiso, respuestaError) = VerificarPermiso();
+                // Verificar permisos generales
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
                 if (!tienePermiso)
                     return respuestaError;
 
+                // Si es OficialComercial
                 if (_currentUserService.IsOficialComercial())
                 {
-                    // Si es OC, debe especificar un VendedorId
+                    // Debe especificar un vendedor 
                     if (!operacionDto.VendedorId.HasValue)
                     {
                         return BadRequest(new { mensaje = "Como Oficial Comercial, debes especificar el vendedor para la operación." });
                     }
 
-                    // Aquí se podría verificar si el vendedor pertenece a un canal asignado al OC
-                    // Esta lógica requeriría servicios adicionales
+                    // Si se especificó un canal, verificar que esté asignado al OC
+                    if (operacionDto.CanalId.HasValue && canalesPermitidos != null && !canalesPermitidos.Contains(operacionDto.CanalId.Value))
+                    {
+                        return StatusCode(403, new { mensaje = "No tienes permiso para crear operaciones en este canal." });
+                    }
+
+                    // Si se especificó un subcanal, verificar que pertenezca a un canal asignado al OC
+                    if (operacionDto.SubcanalId.HasValue)
+                    {
+                        var subcanal = await _subcanalService.ObtenerSubcanalPorIdAsync(operacionDto.SubcanalId.Value);
+                        if (subcanal == null)
+                        {
+                            return NotFound(new { mensaje = "No se encontró el subcanal especificado." });
+                        }
+
+                        if (canalesPermitidos != null && !canalesPermitidos.Contains(subcanal.CanalId))
+                        {
+                            return StatusCode(403, new { mensaje = "No tienes permiso para crear operaciones en este subcanal." });
+                        }
+                    }
                 }
 
                 int usuarioId = _currentUserService.GetUserId();
@@ -134,6 +192,18 @@ namespace MundoPrendarios.API.Controllers
                 if (User.Identity.IsAuthenticated)
                 {
                     usuarioId = _currentUserService.GetUserId();
+
+                    // Si es OficialComercial autenticado y se especificó un canal, verificar permisos
+                    if (_currentUserService.IsOficialComercial() && modelo.Operacion.CanalId.HasValue)
+                    {
+                        var canalesPermitidos = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId.Value);
+                        var canalesIds = canalesPermitidos.Select(c => c.Id).ToList();
+
+                        if (!canalesIds.Contains(modelo.Operacion.CanalId.Value))
+                        {
+                            return StatusCode(403, new { mensaje = "No tienes permiso para crear operaciones en este canal." });
+                        }
+                    }
                 }
 
                 // Actualiza la conversión en OperacionController.cs
@@ -171,6 +241,11 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
+                // Verificar permisos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
                 // Si es Admin, puede ver todas las operaciones
                 if (_currentUserService.IsAdmin())
                 {
@@ -178,14 +253,26 @@ namespace MundoPrendarios.API.Controllers
                     return Ok(operaciones);
                 }
 
+                // Si es OficialComercial, solo puede ver las operaciones de sus canales asignados
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null)
+                {
+                    var operaciones = await _operacionService.ObtenerTodasOperacionesAsync();
+                    var operacionesFiltradas = operaciones.Where(o => canalesPermitidos.Contains(o.CanalId.Value)).ToList();
+                    return Ok(operacionesFiltradas);
+                }
+
                 // Si es AdminCanal, solo puede ver las operaciones de sus subcanales
                 if (_currentUserService.IsAdminCanal())
                 {
                     int usuarioId = _currentUserService.GetUserId();
-                    // Lógica para obtener operaciones de los subcanales administrados
-                    // (Debería implementarse en el servicio)
+                    // Obtener los subcanales que administra
+                    var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+                    var subcanalIds = subcanales.Select(s => s.Id).ToList();
+
+                    // Filtrar operaciones por esos subcanales
                     var operaciones = await _operacionService.ObtenerTodasOperacionesAsync();
-                    return Ok(operaciones.Where(o => o.SubcanalId.HasValue));
+                    var operacionesFiltradas = operaciones.Where(o => subcanalIds.Contains(o.SubcanalId ?? 0)).ToList();
+                    return Ok(operacionesFiltradas);
                 }
 
                 // Si es Vendor, solo puede ver sus propias operaciones
@@ -193,16 +280,6 @@ namespace MundoPrendarios.API.Controllers
                 {
                     int usuarioId = _currentUserService.GetUserId();
                     var operaciones = await _operacionService.ObtenerOperacionesPorVendedorAsync(usuarioId);
-                    return Ok(operaciones);
-                }
-
-                // Si es OficialComercial, puede ver las operaciones de sus canales asignados
-                if (_currentUserService.IsOficialComercial())
-                {
-                    int usuarioId = _currentUserService.GetUserId();
-                    // Esta función requeriría implementación adicional
-                    // Por ahora, simplemente mostraremos todas las operaciones
-                    var operaciones = await _operacionService.ObtenerTodasOperacionesAsync();
                     return Ok(operaciones);
                 }
 
@@ -227,20 +304,37 @@ namespace MundoPrendarios.API.Controllers
                     return NotFound(new { mensaje = "No se encontró la operación especificada." });
                 }
 
-                // Verificar permiso según rol
+                // Verificar permisos según rol
                 if (_currentUserService.IsAdmin())
                 {
                     return Ok(operacion);
                 }
-                else if (_currentUserService.IsAdminCanal())
+                else if (_currentUserService.IsOficialComercial())
                 {
-                    // Verificar si la operación pertenece a un subcanal que administra
-                    // Esta lógica podría mejorarse con un método específico
+                    // Verificar si la operación pertenece a un canal asignado al OC
                     int usuarioId = _currentUserService.GetUserId();
-                    if (operacion.SubcanalId.HasValue)
+                    var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                    if (canalesIds.Contains(operacion.CanalId.Value))
                     {
                         return Ok(operacion);
                     }
+
+                    return Forbid();
+                }
+                else if (_currentUserService.IsAdminCanal())
+                {
+                    // Verificar si la operación pertenece a un subcanal que administra
+                    int usuarioId = _currentUserService.GetUserId();
+                    var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+                    var subcanalIds = subcanales.Select(s => s.Id).ToList();
+
+                    if (operacion.SubcanalId.HasValue && subcanalIds.Contains(operacion.SubcanalId.Value))
+                    {
+                        return Ok(operacion);
+                    }
+
                     return Forbid();
                 }
                 else if (_currentUserService.IsVendor())
@@ -251,13 +345,8 @@ namespace MundoPrendarios.API.Controllers
                     {
                         return Ok(operacion);
                     }
+
                     return Forbid();
-                }
-                else if (_currentUserService.IsOficialComercial())
-                {
-                    // Puede ver las operaciones de sus canales asignados
-                    // Esta lógica requeriría implementación adicional
-                    return Ok(operacion);
                 }
 
                 return Forbid();
@@ -274,29 +363,40 @@ namespace MundoPrendarios.API.Controllers
         public async Task<ActionResult<IEnumerable<OperacionDto>>> GetOperacionesByCliente(int clienteId)
         {
             try
-            {
-                var (tienePermiso, respuestaError) = VerificarPermiso();
+            {// Verificar permisos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
                 if (!tienePermiso)
                     return respuestaError;
 
-                // Implementar lógica según rol
+                var operaciones = await _operacionService.ObtenerOperacionesPorClienteAsync(clienteId);
+
+                // Filtrar según el rol y los permisos del usuario
                 if (_currentUserService.IsAdmin())
                 {
-                    var operaciones = await _operacionService.ObtenerOperacionesPorClienteAsync(clienteId);
                     return Ok(operaciones);
                 }
-                else if (_currentUserService.IsAdminCanal() || _currentUserService.IsVendor() || _currentUserService.IsOficialComercial())
+                else if (_currentUserService.IsOficialComercial())
                 {
-                    // Restringir a operaciones de clientes que pertenezcan a sus subcanales/canales
-                    var operaciones = await _operacionService.ObtenerOperacionesPorClienteAsync(clienteId);
-
-                    // Filtrar según permisos
-                    if (_currentUserService.IsVendor())
+                    // Filtrar operaciones por canales asignados al OC
+                    if (canalesPermitidos != null)
                     {
-                        int usuarioId = _currentUserService.GetUserId();
-                        operaciones = operaciones.Where(o => o.VendedorId == usuarioId).ToList();
+                        operaciones = operaciones.Where(o => canalesPermitidos.Contains(o.CanalId.Value)).ToList();
                     }
+                    return Ok(operaciones);
+                }
+                else if (_currentUserService.IsAdminCanal())
+                {
+                    int usuarioId = _currentUserService.GetUserId();
+                    var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+                    var subcanalIds = subcanales.Select(s => s.Id).ToList();
 
+                    operaciones = operaciones.Where(o => o.SubcanalId.HasValue && subcanalIds.Contains(o.SubcanalId.Value)).ToList();
+                    return Ok(operaciones);
+                }
+                else if (_currentUserService.IsVendor())
+                {
+                    int usuarioId = _currentUserService.GetUserId();
+                    operaciones = operaciones.Where(o => o.VendedorId == usuarioId).ToList();
                     return Ok(operaciones);
                 }
 
@@ -315,33 +415,63 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Verificar permisos
+                // Verificar si el subcanal existe
+                var subcanal = await _subcanalService.ObtenerSubcanalPorIdAsync(subcanalId);
+                if (subcanal == null)
+                {
+                    return NotFound(new { mensaje = "No se encontró el subcanal especificado." });
+                }
+
+                // Verificar permisos según rol
                 if (_currentUserService.IsAdmin())
                 {
                     var operaciones = await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
                     return Ok(operaciones);
                 }
+                else if (_currentUserService.IsOficialComercial())
+                {
+                    // Verificar si el OC tiene asignado el canal del subcanal
+                    int usuarioId = _currentUserService.GetUserId();
+                    var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                    if (canalesIds.Contains(subcanal.CanalId))
+                    {
+                        var operaciones = await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
+                        return Ok(operaciones);
+                    }
+
+                    return StatusCode(403, new { mensaje = "No tienes permiso para ver las operaciones de este subcanal." });
+                }
                 else if (_currentUserService.IsAdminCanal())
                 {
+                    // Verificar si administra este subcanal
                     int usuarioId = _currentUserService.GetUserId();
-                    // Aquí debería verificarse si el usuario administra este subcanal
-                    var operaciones = await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
-                    return Ok(operaciones);
+                    var subcanalesAdmin = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+
+                    if (subcanalesAdmin.Any(s => s.Id == subcanalId))
+                    {
+                        var operaciones = await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
+                        return Ok(operaciones);
+                    }
+
+                    return StatusCode(403, new { mensaje = "No administras este subcanal." });
                 }
                 else if (_currentUserService.IsVendor())
                 {
+                    // Verificar si el vendor pertenece a este subcanal
                     int usuarioId = _currentUserService.GetUserId();
-                    var operaciones = await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
-                    // Filtrar solo las operaciones donde el usuario es el vendedor
-                    operaciones = operaciones.Where(o => o.VendedorId == usuarioId).ToList();
-                    return Ok(operaciones);
-                }
-                else if (_currentUserService.IsOficialComercial())
-                {
-                    int usuarioId = _currentUserService.GetUserId();
-                    // Verificar si el subcanal pertenece a un canal asignado al OC
-                    var operaciones = await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
-                    return Ok(operaciones);
+                    var subcanalesVendor = await _subcanalService.ObtenerSubcanalesPorUsuarioAsync(usuarioId);
+
+                    if (subcanalesVendor.Any(s => s.Id == subcanalId))
+                    {
+                        // Solo devolver operaciones donde el vendor es el vendedor
+                        var operaciones = await _operacionService.ObtenerOperacionesPorSubcanalAsync(subcanalId);
+                        var operacionesFiltradas = operaciones.Where(o => o.VendedorId == usuarioId).ToList();
+                        return Ok(operacionesFiltradas);
+                    }
+
+                    return StatusCode(403, new { mensaje = "No perteneces a este subcanal." });
                 }
 
                 return Forbid();
@@ -359,33 +489,57 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Verificar permisos
+                // Verificar permisos según rol
                 if (_currentUserService.IsAdmin())
                 {
                     var operaciones = await _operacionService.ObtenerOperacionesPorCanalAsync(canalId);
                     return Ok(operaciones);
                 }
+                else if (_currentUserService.IsOficialComercial())
+                {
+                    // Verificar si el OC tiene asignado este canal
+                    int usuarioId = _currentUserService.GetUserId();
+                    var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+
+                    if (canalesAsignados.Any(c => c.Id == canalId))
+                    {
+                        var operaciones = await _operacionService.ObtenerOperacionesPorCanalAsync(canalId);
+                        return Ok(operaciones);
+                    }
+
+                    return StatusCode(403, new { mensaje = "No tienes asignado este canal." });
+                }
                 else if (_currentUserService.IsAdminCanal())
                 {
+                    // Verificar qué subcanales administra en este canal
                     int usuarioId = _currentUserService.GetUserId();
-                    // Verificar si administra este canal
-                    var operaciones = await _operacionService.ObtenerOperacionesPorCanalAsync(canalId);
-                    return Ok(operaciones);
+                    var subcanalesAdmin = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+                    var subcanalIds = subcanalesAdmin.Where(s => s.CanalId == canalId).Select(s => s.Id).ToList();
+
+                    if (subcanalIds.Any())
+                    {
+                        var operaciones = await _operacionService.ObtenerOperacionesPorCanalAsync(canalId);
+                        var operacionesFiltradas = operaciones.Where(o => o.SubcanalId.HasValue && subcanalIds.Contains(o.SubcanalId.Value)).ToList();
+                        return Ok(operacionesFiltradas);
+                    }
+
+                    return StatusCode(403, new { mensaje = "No administras ningún subcanal en este canal." });
                 }
                 else if (_currentUserService.IsVendor())
                 {
+                    // Verificar si el vendor pertenece a algún subcanal de este canal
                     int usuarioId = _currentUserService.GetUserId();
-                    var operaciones = await _operacionService.ObtenerOperacionesPorCanalAsync(canalId);
-                    // Filtrar solo las operaciones donde el usuario es el vendedor
-                    operaciones = operaciones.Where(o => o.VendedorId == usuarioId).ToList();
-                    return Ok(operaciones);
-                }
-                else if (_currentUserService.IsOficialComercial())
-                {
-                    int usuarioId = _currentUserService.GetUserId();
-                    // Verificar si este canal está asignado al OC
-                    var operaciones = await _operacionService.ObtenerOperacionesPorCanalAsync(canalId);
-                    return Ok(operaciones);
+                    var subcanalesVendor = await _subcanalService.ObtenerSubcanalesPorUsuarioAsync(usuarioId);
+
+                    if (subcanalesVendor.Any(s => s.CanalId == canalId))
+                    {
+                        // Solo devolver operaciones donde el vendor es el vendedor
+                        var operaciones = await _operacionService.ObtenerOperacionesPorCanalAsync(canalId);
+                        var operacionesFiltradas = operaciones.Where(o => o.VendedorId == usuarioId).ToList();
+                        return Ok(operacionesFiltradas);
+                    }
+
+                    return StatusCode(403, new { mensaje = "No perteneces a ningún subcanal de este canal." });
                 }
 
                 return Forbid();

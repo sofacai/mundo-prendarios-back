@@ -8,5 +8,7 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task<IReadOnlyList<PlanCanalDto>> ObtenerPlanesPorCanalAsync(int canalId);
         Task ActivarDesactivarPlanCanalAsync(int planCanalId, bool activar);
         Task EliminarPlanCanalAsync(int planCanalId);
+        Task<PlanCanalDto> ObtenerPlanCanalPorIdAsync(int planCanalId);
+
     }
 }

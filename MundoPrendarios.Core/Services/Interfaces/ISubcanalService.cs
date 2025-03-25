@@ -27,6 +27,9 @@ namespace MundoPrendarios.Core.Services.Interfaces
         // Método para obtener operaciones por subcanal
         Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorSubcanalAsync(int subcanalId);
         Task<SubcanalDto> ActualizarComisionAsync(int subcanalId, ComisionActualizarDto comisionDto);
+        Task<GastoDto> ObtenerGastoPorIdAsync(int gastoId);
+
+
 
     }
 }

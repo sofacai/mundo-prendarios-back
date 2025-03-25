@@ -12,30 +12,47 @@ namespace MundoPrendarios.API.Controllers
     {
         private readonly ISubcanalService _subcanalService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ICanalOficialComercialService _canalOficialComercialService;
 
-        public SubcanalController(ISubcanalService subcanalService, ICurrentUserService currentUserService)
+        public SubcanalController(
+            ISubcanalService subcanalService,
+            ICurrentUserService currentUserService,
+            ICanalOficialComercialService canalOficialComercialService)
         {
             _subcanalService = subcanalService;
             _currentUserService = currentUserService;
+            _canalOficialComercialService = canalOficialComercialService;
         }
 
         // Método auxiliar para verificar permisos generales
-        private (bool tienePermiso, ActionResult respuestaError) VerificarPermiso()
+        private async Task<(bool tienePermiso, ActionResult respuestaError, List<int> canalesPermitidos)> VerificarPermiso()
         {
             if (_currentUserService.IsAdmin())
-                return (true, null);
+                return (true, null, null);
 
             if (_currentUserService.IsAdminCanal())
-                return (true, null); // AdminCanal tiene algún acceso, pero se verificará específicamente en cada endpoint
+                return (true, null, null); // AdminCanal tiene algún acceso, pero se verificará específicamente en cada endpoint
 
             if (_currentUserService.IsOficialComercial())
-                return (true, null); // OC tiene acceso a los subcanales de sus canales asignados
+            {
+                int usuarioId = _currentUserService.GetUserId();
+                var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                if (canalesAsignados != null && canalesAsignados.Any())
+                {
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+                    return (true, null, canalesIds); // OC puede ver subcanales de sus canales asignados
+                }
+                else
+                {
+                    return (false, StatusCode(403, new { mensaje = "No tienes canales asignados." }), null);
+                }
+            }
 
             // Vendors no tienen acceso a subcanales
-            return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de subcanales." }));
+            return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de subcanales." }), null);
         }
 
-        // Método para verificar si un AdminCanal tiene acceso a un subcanal específico
+        // Método para verificar si un AdminCanal o un OficialComercial tiene acceso a un subcanal específico
         private async Task<(bool tienePermiso, ActionResult respuestaError)> VerificarPermisoSubcanal(int subcanalId)
         {
             if (_currentUserService.IsAdmin())
@@ -57,15 +74,19 @@ namespace MundoPrendarios.API.Controllers
             {
                 int usuarioId = _currentUserService.GetUserId();
 
-                // Verificar si el subcanal pertenece a uno de los canales asignados al OC
+                // Obtener el subcanal para verificar a qué canal pertenece
                 var subcanal = await _subcanalService.ObtenerSubcanalPorIdAsync(subcanalId);
                 if (subcanal == null)
                     return (false, StatusCode(404, new { mensaje = "No se encontró el subcanal especificado." }));
 
-                // Aquí deberíamos verificar si el OC tiene asignado este canal
-                // Esto requiere inyectar el servicio ICanalOficialComercialService en este controlador
-                // Para este ejemplo, asumiremos que tiene acceso
-                return (true, null);
+                // Verificar si el OC tiene asignado el canal al que pertenece este subcanal
+                var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                if (canalesAsignados != null && canalesAsignados.Any(c => c.Id == subcanal.CanalId))
+                {
+                    return (true, null);
+                }
+
+                return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a este subcanal porque no pertenece a ninguno de tus canales asignados." }));
             }
 
             return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a la información de subcanales." }));
@@ -78,7 +99,7 @@ namespace MundoPrendarios.API.Controllers
             try
             {
                 // Verificar permisos básicos
-                var (tienePermiso, respuestaError) = VerificarPermiso();
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
                 if (!tienePermiso)
                     return respuestaError;
 
@@ -87,6 +108,14 @@ namespace MundoPrendarios.API.Controllers
                 {
                     var subcanales = await _subcanalService.ObtenerTodosSubcanalesAsync();
                     return Ok(subcanales);
+                }
+
+                // Si es OficialComercial, solo puede ver los subcanales de los canales asignados
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null)
+                {
+                    var todosSubcanales = await _subcanalService.ObtenerTodosSubcanalesAsync();
+                    var subcanalFiltrados = todosSubcanales.Where(s => canalesPermitidos.Contains(s.CanalId)).ToList();
+                    return Ok(subcanalFiltrados);
                 }
 
                 // Si es AdminCanal, solo puede ver sus subcanales
@@ -142,9 +171,15 @@ namespace MundoPrendarios.API.Controllers
             try
             {
                 // Verificar permisos básicos
-                var (tienePermiso, respuestaError) = VerificarPermiso();
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
                 if (!tienePermiso)
                     return respuestaError;
+
+                // Si es OficialComercial, verificar que tenga acceso a este canal
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(canalId))
+                {
+                    return StatusCode(403, new { mensaje = "No tienes permiso para ver los subcanales de este canal." });
+                }
 
                 // Si es Admin, puede ver todos los subcanales de cualquier canal
                 if (_currentUserService.IsAdmin())
@@ -164,8 +199,9 @@ namespace MundoPrendarios.API.Controllers
                     return Ok(misSubcanales);
                 }
 
-                // No debería llegar aquí debido a la verificación inicial
-                return Forbid();
+                // Si es OficialComercial, puede ver todos los subcanales del canal
+                var todosSubcanales = await _subcanalService.ObtenerSubcanalesPorCanalAsync(canalId);
+                return Ok(todosSubcanales);
             }
             catch (Exception ex)
             {
@@ -179,14 +215,25 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede crear subcanales
-                if (!_currentUserService.IsAdmin())
+                // Verificar permisos básicos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Si es OficialComercial, verificar que el canal esté asignado
+                if (_currentUserService.IsOficialComercial() && canalesPermitidos != null && !canalesPermitidos.Contains(subcanalDto.CanalId))
                 {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden crear subcanales." });
+                    return StatusCode(403, new { mensaje = "No tienes permiso para crear subcanales en este canal." });
                 }
 
-                var createdSubcanal = await _subcanalService.CrearSubcanalAsync(subcanalDto);
-                return CreatedAtAction("GetSubcanal", new { id = createdSubcanal.Id }, createdSubcanal);
+                // Admin u Oficial Comercial pueden crear subcanales
+                if (_currentUserService.IsAdmin() || _currentUserService.IsOficialComercial())
+                {
+                    var createdSubcanal = await _subcanalService.CrearSubcanalAsync(subcanalDto);
+                    return CreatedAtAction("GetSubcanal", new { id = createdSubcanal.Id }, createdSubcanal);
+                }
+
+                return StatusCode(403, new { mensaje = "No tienes permisos para crear subcanales." });
             }
             catch (Exception ex)
             {
@@ -200,10 +247,22 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede actualizar subcanales
-                if (!_currentUserService.IsAdmin())
+                // Verificar permisos para este subcanal específico
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(id);
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Si es OficialComercial, verificar que el canal nuevo esté asignado (en caso de cambio)
+                if (_currentUserService.IsOficialComercial())
                 {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden actualizar subcanales." });
+                    int usuarioId = _currentUserService.GetUserId();
+                    var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                    if (!canalesIds.Contains(subcanalDto.CanalId))
+                    {
+                        return StatusCode(403, new { mensaje = "No puedes mover el subcanal a un canal que no tienes asignado." });
+                    }
                 }
 
                 await _subcanalService.ActualizarSubcanalAsync(id, subcanalDto);
@@ -225,11 +284,10 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede activar subcanales
-                if (!_currentUserService.IsAdmin())
-                {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden activar subcanales." });
-                }
+                // Verificar permisos para este subcanal específico
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(id);
+                if (!tienePermiso)
+                    return respuestaError;
 
                 await _subcanalService.ActivarDesactivarSubcanalAsync(id, true);
                 return Ok(new { mensaje = "Subcanal activado correctamente." });
@@ -250,11 +308,10 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede desactivar subcanales
-                if (!_currentUserService.IsAdmin())
-                {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden desactivar subcanales." });
-                }
+                // Verificar permisos para este subcanal específico
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(id);
+                if (!tienePermiso)
+                    return respuestaError;
 
                 await _subcanalService.ActivarDesactivarSubcanalAsync(id, false);
                 return Ok(new { mensaje = "Subcanal desactivado correctamente." });
@@ -323,11 +380,10 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede crear gastos
-                if (!_currentUserService.IsAdmin())
-                {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden crear gastos." });
-                }
+                // Verificar si tiene permisos para este subcanal
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(gastoDto.SubcanalId);
+                if (!tienePermiso)
+                    return respuestaError;
 
                 var createdGasto = await _subcanalService.CrearGastoAsync(gastoDto);
                 return Ok(createdGasto);
@@ -344,11 +400,17 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede eliminar gastos
-                if (!_currentUserService.IsAdmin())
+                // Para esta operación, primero necesitamos obtener el gasto para saber a qué subcanal pertenece
+                var gasto = await _subcanalService.ObtenerGastoPorIdAsync(gastoId);
+                if (gasto == null)
                 {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden eliminar gastos." });
+                    return NotFound(new { mensaje = "No se encontró el gasto especificado." });
                 }
+
+                // Verificar si tiene permisos para el subcanal al que pertenece este gasto
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(gasto.SubcanalId);
+                if (!tienePermiso)
+                    return respuestaError;
 
                 await _subcanalService.EliminarGastoAsync(gastoId);
                 return Ok(new { mensaje = "Gasto eliminado correctamente." });
@@ -369,11 +431,10 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede asignar AdminCanal a un subcanal
-                if (!_currentUserService.IsAdmin())
-                {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden asignar administradores de canal." });
-                }
+                // Verificar si tiene permisos para este subcanal
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(subcanalId);
+                if (!tienePermiso)
+                    return respuestaError;
 
                 await _subcanalService.AsignarAdminCanalAsync(subcanalId, adminCanalId);
                 return Ok(new { mensaje = "Administrador de canal asignado correctamente al subcanal." });
@@ -421,11 +482,17 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Solo Admin puede actualizar gastos
-                if (!_currentUserService.IsAdmin())
+                // Primero obtener el gasto para saber a qué subcanal pertenece
+                var gasto = await _subcanalService.ObtenerGastoPorIdAsync(gastoId);
+                if (gasto == null)
                 {
-                    return StatusCode(403, new { mensaje = "Solo los administradores pueden actualizar gastos." });
+                    return NotFound(new { mensaje = "No se encontró el gasto especificado." });
                 }
+
+                // Verificar si tiene permisos para el subcanal al que pertenece este gasto
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(gasto.SubcanalId);
+                if (!tienePermiso)
+                    return respuestaError;
 
                 var updatedGasto = await _subcanalService.ActualizarGastoAsync(gastoId, gastoDto);
                 return Ok(updatedGasto);
@@ -446,7 +513,7 @@ namespace MundoPrendarios.API.Controllers
             try
             {
                 // Verificar permisos básicos
-                var (tienePermiso, respuestaError) = VerificarPermiso();
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
                 if (!tienePermiso)
                     return respuestaError;
 
@@ -456,8 +523,24 @@ namespace MundoPrendarios.API.Controllers
                     return StatusCode(403, new { mensaje = "Como Administrador de Canal, solo puedes consultar tus propios subcanales." });
                 }
 
-                var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(adminCanalId);
-                return Ok(subcanales);
+                // Si es OC, verificar que el AdminCanal pertenezca a alguno de sus canales asignados
+                if (_currentUserService.IsOficialComercial())
+                {
+                    // Obtener subcanales para el admin especificado
+                    var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(adminCanalId);
+
+                    // Filtrar solo aquellos que pertenecen a canales asignados al OC
+                    if (canalesPermitidos != null)
+                    {
+                        subcanales = subcanales.Where(s => canalesPermitidos.Contains(s.CanalId)).ToList();
+                    }
+
+                    return Ok(subcanales);
+                }
+
+                // Para Admin, retornar todos los subcanales del adminCanal especificado
+                var todosSubcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(adminCanalId);
+                return Ok(todosSubcanales);
             }
             catch (KeyNotFoundException ex)
             {
@@ -482,6 +565,23 @@ namespace MundoPrendarios.API.Controllers
                 if (_currentUserService.GetUserId() == usuarioId || _currentUserService.IsAdmin())
                 {
                     var subcanales = await _subcanalService.ObtenerSubcanalesPorUsuarioAsync(usuarioId);
+                    return Ok(subcanales);
+                }
+
+                // Si es OficialComercial
+                if (_currentUserService.IsOficialComercial())
+                {
+                    // Obtener canales asignados al OC
+                    int ocUsuarioId = _currentUserService.GetUserId();
+                    var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(ocUsuarioId);
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                    // Obtener subcanales para el usuario solicitado
+                    var subcanales = await _subcanalService.ObtenerSubcanalesPorUsuarioAsync(usuarioId);
+
+                    // Filtrar solo aquellos que pertenecen a canales asignados al OC
+                    subcanales = subcanales.Where(s => canalesIds.Contains(s.CanalId)).ToList();
+
                     return Ok(subcanales);
                 }
 
@@ -543,10 +643,13 @@ namespace MundoPrendarios.API.Controllers
         [HttpPatch("{id}/comision")]
         public async Task<ActionResult<SubcanalDto>> ActualizarComision(int id, ComisionActualizarDto comisionDto)
         {
-            // Verificar permisos según sea necesario
-
             try
             {
+                // Verificar permisos para este subcanal específico
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(id);
+                if (!tienePermiso)
+                    return respuestaError;
+
                 var subcanal = await _subcanalService.ActualizarComisionAsync(id, comisionDto);
                 return Ok(subcanal);
             }

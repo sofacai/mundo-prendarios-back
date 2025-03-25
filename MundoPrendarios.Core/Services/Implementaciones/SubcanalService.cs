@@ -469,5 +469,22 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             // Obtener y retornar el subcanal actualizado con todos sus detalles
             return await ObtenerSubcanalPorIdAsync(subcanalId);
         }
+
+        public async Task<GastoDto> ObtenerGastoPorIdAsync(int gastoId)
+        {
+            var gasto = await _gastoRepository.GetByIdAsync(gastoId);
+            if (gasto == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el gasto con ID {gastoId}");
+            }
+
+            return new GastoDto
+            {
+                Id = gasto.Id,
+                Nombre = gasto.Nombre,
+                Porcentaje = gasto.Porcentaje,
+                SubcanalId = gasto.SubcanalId // Asegúrate de que este campo esté definido en GastoDto
+            };
+        }
     }
 }
