@@ -53,7 +53,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 CanalId = dto.CanalId,
                 OficialComercialId = dto.OficialComercialId,
                 FechaAsignacion = DateTime.UtcNow,
-                Activo = true
+                Activo = true // Mantenemos esto para registros nuevos
             };
 
             await _canalOficialComercialRepository.AddAsync(nuevaRelacion);
@@ -85,12 +85,13 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             // Buscar la relación
             var relacion = await _canalOficialComercialRepository.GetCanalOficialComercialAsync(canalId, oficialComercialId);
-            if (relacion == null || !relacion.Activo)
+            if (relacion == null)
                 return false;
 
-            // Desactivar la relación en lugar de eliminarla
-            relacion.Activo = false;
-            await _canalOficialComercialRepository.UpdateAsync(relacion);
+            // Quitamos la revisión de Activo: (relacion == null || !relacion.Activo)
+
+            // En lugar de desactivar, eliminamos la relación 
+            await _canalOficialComercialRepository.DeleteAsync(relacion);
 
             return true;
         }

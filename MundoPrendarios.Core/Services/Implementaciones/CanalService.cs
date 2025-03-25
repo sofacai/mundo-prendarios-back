@@ -124,7 +124,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                     }
                 }
 
-                // Obtener los oficiales comerciales asignados a este canal
+                // Obtener los oficiales comerciales asignados a este canal específico
                 var oficialesComerciales = await _canalOficialComercialRepository.GetOficialesComercialesByCanalAsync(canal.Id);
                 if (oficialesComerciales != null && oficialesComerciales.Any())
                 {

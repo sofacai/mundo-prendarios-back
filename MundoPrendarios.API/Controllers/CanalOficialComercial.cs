@@ -46,7 +46,11 @@ namespace MundoPrendarios.API.Controllers
                 }
 
                 var resultado = await _canalOficialComercialService.AsignarOficialComercialACanalAsync(dto);
-                return Ok(resultado);
+                return Ok(new
+                {
+                    mensaje = "Oficial comercial asignado correctamente al canal.",
+                    datos = resultado
+                });
             }
             catch (KeyNotFoundException ex)
             {
@@ -86,11 +90,21 @@ namespace MundoPrendarios.API.Controllers
                     return NotFound(new { mensaje = "No se encontró la relación entre canal y oficial comercial." });
                 }
 
-                return NoContent();
+                // Cambio para proporcionar una respuesta más explícita en lugar de NoContent()
+                return Ok(new
+                {
+                    mensaje = "Oficial comercial desasignado correctamente del canal.",
+                    canalId = canalId,
+                    oficialComercialId = oficialComercialId
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { mensaje = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al desasignar oficial comercial: " + ex.Message });
             }
         }
 
@@ -106,7 +120,21 @@ namespace MundoPrendarios.API.Controllers
                     return respuestaError;
 
                 var oficiales = await _canalOficialComercialService.ObtenerOficialesComercialesPorCanalAsync(canalId);
-                return Ok(oficiales);
+
+                if (oficiales == null || !oficiales.Any())
+                {
+                    return Ok(new
+                    {
+                        mensaje = "No hay oficiales comerciales asignados a este canal.",
+                        datos = new List<CanalOficialComercialDto>()
+                    });
+                }
+
+                return Ok(new
+                {
+                    mensaje = "Oficiales comerciales recuperados correctamente.",
+                    datos = oficiales
+                });
             }
             catch (KeyNotFoundException ex)
             {
@@ -114,7 +142,7 @@ namespace MundoPrendarios.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { mensaje = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener oficiales comerciales: " + ex.Message });
             }
         }
 
@@ -128,7 +156,21 @@ namespace MundoPrendarios.API.Controllers
                 if (_currentUserService.IsAdmin())
                 {
                     var canales = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(oficialComercialId);
-                    return Ok(canales);
+
+                    if (canales == null || !canales.Any())
+                    {
+                        return Ok(new
+                        {
+                            mensaje = "No hay canales asignados a este oficial comercial.",
+                            datos = new List<CanalDto>()
+                        });
+                    }
+
+                    return Ok(new
+                    {
+                        mensaje = "Canales recuperados correctamente.",
+                        datos = canales
+                    });
                 }
                 else if (_currentUserService.IsOficialComercial())
                 {
@@ -136,13 +178,28 @@ namespace MundoPrendarios.API.Controllers
                     int usuarioId = _currentUserService.GetUserId();
                     if (oficialComercialId != usuarioId)
                     {
-                        return Forbid();
+                        return StatusCode(403, new { mensaje = "Solo puedes consultar los canales asignados a tu usuario." });
                     }
+
                     var canales = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(oficialComercialId);
-                    return Ok(canales);
+
+                    if (canales == null || !canales.Any())
+                    {
+                        return Ok(new
+                        {
+                            mensaje = "No tienes canales asignados.",
+                            datos = new List<CanalDto>()
+                        });
+                    }
+
+                    return Ok(new
+                    {
+                        mensaje = "Canales recuperados correctamente.",
+                        datos = canales
+                    });
                 }
 
-                return Forbid();
+                return StatusCode(403, new { mensaje = "No tienes permisos para realizar esta acción." });
             }
             catch (KeyNotFoundException ex)
             {
@@ -150,7 +207,7 @@ namespace MundoPrendarios.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { mensaje = ex.Message });
+                return StatusCode(500, new { mensaje = "Error al obtener canales: " + ex.Message });
             }
         }
     }

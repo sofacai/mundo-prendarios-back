@@ -20,7 +20,7 @@ namespace MundoPrendarios.Infrastructure.Repositories
         public async Task<IReadOnlyList<CanalOficialComercial>> GetOficialesComercialesByCanalAsync(int canalId)
         {
             return await _dbContext.CanalOficialesComerciales
-                .Where(co => co.CanalId == canalId && co.Activo)
+             .Where(co => co.CanalId == canalId)  // Removed "&& co.Activo"
                 .Include(co => co.OficialComercial)
                 .ToListAsync();
         }
@@ -28,7 +28,7 @@ namespace MundoPrendarios.Infrastructure.Repositories
         public async Task<IReadOnlyList<CanalOficialComercial>> GetCanalesByOficialComercialAsync(int oficialComercialId)
         {
             return await _dbContext.CanalOficialesComerciales
-                .Where(co => co.OficialComercialId == oficialComercialId && co.Activo)
+                .Where(co => co.OficialComercialId == oficialComercialId)
                 .Include(co => co.Canal)
                 .ToListAsync();
         }
