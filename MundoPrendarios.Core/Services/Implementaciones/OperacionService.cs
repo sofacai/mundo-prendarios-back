@@ -98,10 +98,10 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             // Cargar datos relacionados para el DTO
             var operacionDetallada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
-            return _mapper.Map<Operacion, OperacionDto>(operacionDetallada);
+            return _mapper.Map<OperacionDto>(operacionDetallada);
         }
 
-        // Nuevo método para actualizar las estadísticas del vendor
+        // Método para actualizar las estadísticas del vendor
         public async Task ActualizarEstadisticasVendorAsync(int vendorId)
         {
             var vendor = await _usuarioRepository.GetByIdAsync(vendorId);
@@ -119,7 +119,6 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             }
         }
 
-
         public async Task<OperacionDto> ObtenerOperacionPorIdAsync(int id)
         {
             var operacion = await _operacionRepository.GetOperacionWithDetailsAsync(id);
@@ -127,37 +126,38 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             {
                 return null;
             }
-            return _mapper.Map<Operacion, OperacionDto>(operacion);
+            return _mapper.Map<OperacionDto>(operacion);
         }
 
         public async Task<IReadOnlyList<OperacionDto>> ObtenerTodasOperacionesAsync()
         {
             var operaciones = await _operacionRepository.GetAllOperacionesWithDetailsAsync();
-            return _mapper.Map<IReadOnlyList<Operacion>, IReadOnlyList<OperacionDto>>(operaciones);
+            // Aquí está el cambio clave - mapear explícitamente a List<OperacionDto>
+            return _mapper.Map<List<OperacionDto>>(operaciones);
         }
 
         public async Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorClienteAsync(int clienteId)
         {
             var operaciones = await _operacionRepository.GetOperacionesByClienteAsync(clienteId);
-            return _mapper.Map<IReadOnlyList<Operacion>, IReadOnlyList<OperacionDto>>(operaciones);
+            return _mapper.Map<List<OperacionDto>>(operaciones);
         }
 
         public async Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorVendedorAsync(int vendedorId)
         {
             var operaciones = await _operacionRepository.GetOperacionesByVendedorAsync(vendedorId);
-            return _mapper.Map<IReadOnlyList<Operacion>, IReadOnlyList<OperacionDto>>(operaciones);
+            return _mapper.Map<List<OperacionDto>>(operaciones);
         }
 
         public async Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorSubcanalAsync(int subcanalId)
         {
             var operaciones = await _operacionRepository.GetOperacionesBySubcanalAsync(subcanalId);
-            return _mapper.Map<IReadOnlyList<Operacion>, IReadOnlyList<OperacionDto>>(operaciones);
+            return _mapper.Map<List<OperacionDto>>(operaciones);
         }
 
         public async Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorCanalAsync(int canalId)
         {
             var operaciones = await _operacionRepository.GetOperacionesByCanalAsync(canalId);
-            return _mapper.Map<IReadOnlyList<Operacion>, IReadOnlyList<OperacionDto>>(operaciones);
+            return _mapper.Map<List<OperacionDto>>(operaciones);
         }
 
         public async Task<CotizacionResultadoDto> CotizarSinLoginAsync(OperacionCotizarDto cotizacionDto)
@@ -175,7 +175,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             // Calcular cuota mensual (fórmula simple, podría ser más compleja según necesidades)
             decimal tasaMensual = regla.Tasa / 12 / 100;
             decimal cuotaMensual = (cotizacionDto.Monto * tasaMensual * (decimal)Math.Pow(1 + (double)tasaMensual, cotizacionDto.Meses)) /
-                                 ((decimal)Math.Pow(1 + (double)tasaMensual, cotizacionDto.Meses) - 1);
+                                    ((decimal)Math.Pow(1 + (double)tasaMensual, cotizacionDto.Meses) - 1);
 
             if (regla.GastoOtorgamiento > 0)
             {
@@ -194,7 +194,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 MontoTotal = decimal.Round(montoTotal, 2),
                 PlanNombre = regla.Nombre,
                 PlanId = regla.Id,
-                GastosAplicados = new List<GastoAplicadoDto>() // Sin gastos para cotización sin login
+                GastosAplicados = new List<GastoAplicadoDto>() // sin gastos para cotización sin login
             };
         }
 
@@ -343,7 +343,14 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Apellido = clienteDto.Apellido,
                 Email = clienteDto.Email,
                 Telefono = clienteDto.Telefono,
-                CanalId = clienteDto.CanalId ?? 1 // Usar el canal proporcionado o un valor predeterminado
+                Cuil = clienteDto.Cuil,
+                Dni = clienteDto.Dni,
+                Provincia = clienteDto.Provincia,
+                Sexo = clienteDto.Sexo,
+                EstadoCivil = clienteDto.EstadoCivil,
+                CanalId = clienteDto.CanalId ?? 1, // Usar el canal proporcionado o un valor predeterminado
+                UsuarioCreadorId = usuarioId,
+                FechaCreacion = DateTime.UtcNow
             };
 
             await _clienteRepository.AddAsync(cliente);
@@ -392,7 +399,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             // Cargar datos relacionados para el DTO
             var operacionDetallada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
-            return _mapper.Map<Operacion, OperacionDto>(operacionDetallada);
+            return _mapper.Map<OperacionDto>(operacionDetallada);
         }
     }
 }

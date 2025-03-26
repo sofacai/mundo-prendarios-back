@@ -25,6 +25,24 @@ namespace MundoPrendarios.Core.Mapping
             // Gasto mappings
             CreateMap<Gasto, GastoDto>();
             CreateMap<GastoCrearDto, Gasto>();
+            CreateMap<OperacionDto, Operacion>();
+
+
+
+            CreateMap<List<Operacion>, List<OperacionDto>>();
+
+            CreateMap<Operacion, OperacionDto>()
+        .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
+            src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : string.Empty))
+        .ForMember(dest => dest.PlanNombre, opt => opt.MapFrom(src =>
+            src.Plan != null ? src.Plan.Nombre : string.Empty))
+        .ForMember(dest => dest.VendedorNombre, opt => opt.MapFrom(src =>
+            src.Vendedor != null ? $"{src.Vendedor.Nombre} {src.Vendedor.Apellido}" : string.Empty))
+        .ForMember(dest => dest.SubcanalNombre, opt => opt.MapFrom(src =>
+            src.Subcanal != null ? src.Subcanal.Nombre : string.Empty))
+        .ForMember(dest => dest.CanalNombre, opt => opt.MapFrom(src =>
+            src.Canal != null ? src.Canal.NombreFantasia : string.Empty));
+
 
             // Usuario mappings
             CreateMap<Usuario, UsuarioDto>()
@@ -104,6 +122,20 @@ namespace MundoPrendarios.Core.Mapping
                     opt.Ignore()) // Esta propiedad se mapea manualmente
                 .ForMember(dest => dest.NumeroOperaciones, opt =>
                     opt.Ignore()); // Esta propiedad se mapea manualmente
+
+            // Operacion mappings
+            CreateMap<Operacion, OperacionDto>()
+                .ForMember(dest => dest.ClienteNombre, opt =>
+                    opt.MapFrom(src => src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : string.Empty))
+                .ForMember(dest => dest.PlanNombre, opt =>
+                    opt.MapFrom(src => src.Plan != null ? src.Plan.Nombre : string.Empty))
+                .ForMember(dest => dest.VendedorNombre, opt =>
+                    opt.MapFrom(src => src.Vendedor != null ? $"{src.Vendedor.Nombre} {src.Vendedor.Apellido}" : string.Empty))
+                .ForMember(dest => dest.SubcanalNombre, opt =>
+                    opt.MapFrom(src => src.Subcanal != null ? src.Subcanal.Nombre : string.Empty))
+                .ForMember(dest => dest.CanalNombre, opt =>
+                    opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : string.Empty));
+
 
             // Cliente and related DTOs
             CreateMap<Cliente, ClienteDto>()
