@@ -25,23 +25,6 @@ namespace MundoPrendarios.Core.Mapping
             // Gasto mappings
             CreateMap<Gasto, GastoDto>();
             CreateMap<GastoCrearDto, Gasto>();
-            CreateMap<OperacionDto, Operacion>();
-
-
-
-            CreateMap<List<Operacion>, List<OperacionDto>>();
-
-            CreateMap<Operacion, OperacionDto>()
-        .ForMember(dest => dest.ClienteNombre, opt => opt.MapFrom(src =>
-            src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : string.Empty))
-        .ForMember(dest => dest.PlanNombre, opt => opt.MapFrom(src =>
-            src.Plan != null ? src.Plan.Nombre : string.Empty))
-        .ForMember(dest => dest.VendedorNombre, opt => opt.MapFrom(src =>
-            src.Vendedor != null ? $"{src.Vendedor.Nombre} {src.Vendedor.Apellido}" : string.Empty))
-        .ForMember(dest => dest.SubcanalNombre, opt => opt.MapFrom(src =>
-            src.Subcanal != null ? src.Subcanal.Nombre : string.Empty))
-        .ForMember(dest => dest.CanalNombre, opt => opt.MapFrom(src =>
-            src.Canal != null ? src.Canal.NombreFantasia : string.Empty));
 
 
             // Usuario mappings
@@ -90,11 +73,6 @@ namespace MundoPrendarios.Core.Mapping
             // Añadir mapeo para PlanCanal
             CreateMap<PlanCanal, PlanCanalDto>()
                 .ForMember(dest => dest.Plan, opt => opt.MapFrom(src => src.Plan));
-
-            // Cliente mappings
-            CreateMap<Cliente, ClienteDto>()
-                .ForMember(dest => dest.CanalNombre, opt => opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : string.Empty));
-            CreateMap<ClienteCrearDto, Cliente>();
 
             // Añadir estos mapeos a la clase MappingProfile
 
