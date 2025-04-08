@@ -18,7 +18,25 @@ namespace MundoPrendarios.Core.DTOs
         public int? CanalId { get; set; }
         public string CanalNombre { get; set; }
         public DateTime FechaCreacion { get; set; }
+
+        // Nuevos campos
+        public int? UsuarioCreadorId { get; set; }
+        public string UsuarioCreadorNombre { get; set; }
+        public string Estado { get; set; }
+
+        // Campos para la propuesta real/aprobada
+        public decimal? MontoAprobado { get; set; }
+        public int? MesesAprobados { get; set; }
+        public decimal? TasaAprobada { get; set; }
+        public int? PlanAprobadoId { get; set; }
+        public string PlanAprobadoNombre { get; set; }
+        public DateTime? FechaAprobacion { get; set; }
+
+        // Datos adicionales para liquidación
+        public bool Liquidada { get; set; }
+        public DateTime? FechaLiquidacion { get; set; }
     }
+
 
     public class OperacionCrearDto
     {
@@ -31,6 +49,26 @@ namespace MundoPrendarios.Core.DTOs
         public int? SubcanalId { get; set; }
         public int? CanalId { get; set; }
     }
+
+    public class OperacionCambiarEstadoDto
+    {
+        public string Estado { get; set; }
+    }
+
+    public class OperacionLiquidarDto
+    {
+        public DateTime FechaLiquidacion { get; set; } = DateTime.Now;
+    }
+
+
+    public class OperacionAprobarDto
+    {
+        public decimal MontoAprobado { get; set; }
+        public int MesesAprobados { get; set; }
+        public decimal TasaAprobada { get; set; }
+        public int PlanAprobadoId { get; set; }
+    }
+
 
     public class OperacionCotizarDto
     {

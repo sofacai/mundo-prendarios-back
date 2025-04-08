@@ -25,6 +25,13 @@ namespace MundoPrendarios.Core.Services.Interfaces
         // Método para crear un cliente junto con una operación
         Task<OperacionDto> CrearClienteYOperacionAsync(ClienteOperacionServicioDto clienteDto, OperacionCrearDto operacionDto, int? usuarioId);
 
+        // Nuevos métodos
+        Task<OperacionDto> AprobarOperacionAsync(int operacionId, OperacionAprobarDto aprobarDto);
+        Task<OperacionDto> CambiarEstadoOperacionAsync(int operacionId, string estado);
+        Task<OperacionDto> LiquidarOperacionAsync(int operacionId, DateTime fechaLiquidacion);
+        Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorEstadoAsync(string estado);
+        Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesLiquidadasAsync();
+
 
     }
 }

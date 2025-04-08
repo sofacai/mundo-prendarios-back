@@ -17,7 +17,9 @@ namespace MundoPrendarios.Infrastructure.Repositories
             return await _dbContext.Operaciones
                 .Include(o => o.Cliente)
                 .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
                 .Include(o => o.Vendedor)
+                .Include(o => o.UsuarioCreador)
                 .Include(o => o.Subcanal)
                 .Include(o => o.Canal)
                 .FirstOrDefaultAsync(o => o.Id == operacionId);
@@ -27,8 +29,11 @@ namespace MundoPrendarios.Infrastructure.Repositories
         {
             return await _dbContext.Operaciones
                 .Where(o => o.ClienteId == clienteId)
+                .Include(o => o.Cliente)
                 .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
                 .Include(o => o.Vendedor)
+                .Include(o => o.UsuarioCreador)
                 .Include(o => o.Subcanal)
                 .Include(o => o.Canal)
                 .ToListAsync();
@@ -40,6 +45,8 @@ namespace MundoPrendarios.Infrastructure.Repositories
                 .Where(o => o.VendedorId == vendedorId)
                 .Include(o => o.Cliente)
                 .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
+                .Include(o => o.UsuarioCreador)
                 .Include(o => o.Subcanal)
                 .Include(o => o.Canal)
                 .ToListAsync();
@@ -51,7 +58,9 @@ namespace MundoPrendarios.Infrastructure.Repositories
                 .Where(o => o.SubcanalId == subcanalId)
                 .Include(o => o.Cliente)
                 .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
                 .Include(o => o.Vendedor)
+                .Include(o => o.UsuarioCreador)
                 .Include(o => o.Canal)
                 .ToListAsync();
         }
@@ -62,7 +71,9 @@ namespace MundoPrendarios.Infrastructure.Repositories
                 .Where(o => o.CanalId == canalId)
                 .Include(o => o.Cliente)
                 .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
                 .Include(o => o.Vendedor)
+                .Include(o => o.UsuarioCreador)
                 .Include(o => o.Subcanal)
                 .ToListAsync();
         }
@@ -72,7 +83,37 @@ namespace MundoPrendarios.Infrastructure.Repositories
             return await _dbContext.Operaciones
                 .Include(o => o.Cliente)
                 .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
                 .Include(o => o.Vendedor)
+                .Include(o => o.UsuarioCreador)
+                .Include(o => o.Subcanal)
+                .Include(o => o.Canal)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<Operacion>> GetOperacionesByEstadoAsync(string estado)
+        {
+            return await _dbContext.Operaciones
+                .Where(o => o.Estado == estado)
+                .Include(o => o.Cliente)
+                .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
+                .Include(o => o.Vendedor)
+                .Include(o => o.UsuarioCreador)
+                .Include(o => o.Subcanal)
+                .Include(o => o.Canal)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<Operacion>> GetOperacionesLiquidadasAsync()
+        {
+            return await _dbContext.Operaciones
+                .Where(o => o.Liquidada)
+                .Include(o => o.Cliente)
+                .Include(o => o.Plan)
+                .Include(o => o.PlanAprobado)
+                .Include(o => o.Vendedor)
+                .Include(o => o.UsuarioCreador)
                 .Include(o => o.Subcanal)
                 .Include(o => o.Canal)
                 .ToListAsync();

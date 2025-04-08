@@ -401,5 +401,74 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             var operacionDetallada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
             return _mapper.Map<OperacionDto>(operacionDetallada);
         }
+
+        public async Task<OperacionDto> AprobarOperacionAsync(int operacionId, OperacionAprobarDto aprobarDto)
+        {
+            var operacion = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
+            if (operacion == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
+            }
+
+            // Actualizar los campos de aprobación
+            operacion.MontoAprobado = aprobarDto.MontoAprobado;
+            operacion.MesesAprobados = aprobarDto.MesesAprobados;
+            operacion.TasaAprobada = aprobarDto.TasaAprobada;
+            operacion.PlanAprobadoId = aprobarDto.PlanAprobadoId;
+            operacion.FechaAprobacion = DateTime.Now;
+            operacion.Estado = "Aprobada";
+
+            await _operacionRepository.UpdateAsync(operacion);
+
+            // Cargar datos relacionados para el DTO
+            var operacionActualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
+            return _mapper.Map<OperacionDto>(operacionActualizada);
+        }
+
+        public async Task<OperacionDto> CambiarEstadoOperacionAsync(int operacionId, string estado)
+        {
+            var operacion = await _operacionRepository.GetByIdAsync(operacionId);
+            if (operacion == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
+            }
+
+            operacion.Estado = estado;
+            await _operacionRepository.UpdateAsync(operacion);
+
+            // Cargar datos relacionados para el DTO
+            var operacionActualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
+            return _mapper.Map<OperacionDto>(operacionActualizada);
+        }
+
+        public async Task<OperacionDto> LiquidarOperacionAsync(int operacionId, DateTime fechaLiquidacion)
+        {
+            var operacion = await _operacionRepository.GetByIdAsync(operacionId);
+            if (operacion == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
+            }
+
+            operacion.Liquidada = true;
+            operacion.FechaLiquidacion = fechaLiquidacion;
+            operacion.Estado = "Liquidada";
+            await _operacionRepository.UpdateAsync(operacion);
+
+            // Cargar datos relacionados para el DTO
+            var operacionActualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
+            return _mapper.Map<OperacionDto>(operacionActualizada);
+        }
+
+        public async Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesPorEstadoAsync(string estado)
+        {
+            var operaciones = await _operacionRepository.GetOperacionesByEstadoAsync(estado);
+            return _mapper.Map<List<OperacionDto>>(operaciones);
+        }
+
+        public async Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesLiquidadasAsync()
+        {
+            var operaciones = await _operacionRepository.GetOperacionesLiquidadasAsync();
+            return _mapper.Map<List<OperacionDto>>(operaciones);
+        }
     }
 }

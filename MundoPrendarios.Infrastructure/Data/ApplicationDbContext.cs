@@ -231,6 +231,13 @@ namespace MundoPrendarios.Infrastructure.Data
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Operacion>()
+       .HasOne(o => o.PlanAprobado)
+       .WithMany()
+       .HasForeignKey(o => o.PlanAprobadoId)
+       .IsRequired(false)
+       .OnDelete(DeleteBehavior.Restrict);
+
             // Nueva relación ClienteVendor
             modelBuilder.Entity<ClienteVendors>()
         .HasKey(cv => cv.Id);

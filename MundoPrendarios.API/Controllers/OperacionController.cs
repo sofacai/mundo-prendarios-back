@@ -482,6 +482,108 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
+        // PUT: api/Operacion/5/aprobar
+        [HttpPut("{id}/aprobar")]
+        [Authorize]
+        public async Task<ActionResult<OperacionDto>> AprobarOperacion(int id, OperacionAprobarDto aprobarDto)
+        {
+            try
+            {
+                // Verificar permisos (similar a los otros endpoints)
+
+                var operacionAprobada = await _operacionService.AprobarOperacionAsync(id, aprobarDto);
+                return Ok(operacionAprobada);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // PATCH: api/Operacion/5/estado
+        [HttpPatch("{id}/estado")]
+        [Authorize]
+        public async Task<ActionResult<OperacionDto>> CambiarEstadoOperacion(int id, OperacionCambiarEstadoDto estadoDto)
+        {
+            try
+            {
+                // Verificar permisos
+
+                var operacion = await _operacionService.CambiarEstadoOperacionAsync(id, estadoDto.Estado);
+                return Ok(operacion);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // PATCH: api/Operacion/5/liquidar
+        [HttpPatch("{id}/liquidar")]
+        [Authorize]
+        public async Task<ActionResult<OperacionDto>> LiquidarOperacion(int id, OperacionLiquidarDto liquidarDto)
+        {
+            try
+            {
+                // Verificar permisos
+
+                var operacion = await _operacionService.LiquidarOperacionAsync(id, liquidarDto.FechaLiquidacion);
+                return Ok(operacion);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // GET: api/Operacion/estado/Aprobada
+        [HttpGet("estado/{estado}")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<OperacionDto>>> GetOperacionesByEstado(string estado)
+        {
+            try
+            {
+                // Verificar permisos
+
+                var operaciones = await _operacionService.ObtenerOperacionesPorEstadoAsync(estado);
+                return Ok(operaciones);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // GET: api/Operacion/liquidadas
+        [HttpGet("liquidadas")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<OperacionDto>>> GetOperacionesLiquidadas()
+        {
+            try
+            {
+                // Verificar permisos
+
+                var operaciones = await _operacionService.ObtenerOperacionesLiquidadasAsync();
+                return Ok(operaciones);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
         // GET: api/Operacion/canal/5
         [HttpGet("canal/{canalId}")]
         [Authorize]

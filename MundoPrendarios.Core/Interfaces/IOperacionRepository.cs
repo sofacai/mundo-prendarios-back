@@ -11,5 +11,8 @@ namespace MundoPrendarios.Core.Interfaces
         Task<IReadOnlyList<Operacion>> GetOperacionesBySubcanalAsync(int subcanalId);
         Task<IReadOnlyList<Operacion>> GetOperacionesByCanalAsync(int canalId);
         Task<IReadOnlyList<Operacion>> GetAllOperacionesWithDetailsAsync();
+        Task<IReadOnlyList<Operacion>> GetOperacionesByEstadoAsync(string estado);
+        Task<IReadOnlyList<Operacion>> GetOperacionesLiquidadasAsync();
+
     }
 }
