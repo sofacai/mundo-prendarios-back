@@ -1,4 +1,5 @@
 ﻿using MundoPrendarios.Core.DTOs;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MundoPrendarios.Core.Services.Interfaces
 {
@@ -18,6 +19,7 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task ActualizarUsuarioRestringidoAsync(int id, UsuarioCrearDto usuarioDto);
         Task<bool> VerificarCanalDeSubcanalAsync(int canalId, int subcanalId);
         Task<VendorEstadisticasDto> ObtenerEstadisticasVendorAsync(int vendorId);
+        Task<IReadOnlyList<UsuarioDto>> ObtenerUsuariosPorCreadorAsync(int creadorId); 
 
 
     }

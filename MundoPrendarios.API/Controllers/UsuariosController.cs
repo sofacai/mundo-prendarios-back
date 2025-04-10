@@ -907,6 +907,52 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
+
+        [HttpGet("creados-por/{creadorId}")]
+        [Authorize(Roles = "Admin,AdminCanal,OficialComercial")]
+        public async Task<ActionResult<IReadOnlyList<UsuarioDto>>> GetUsuariosPorCreador(int creadorId)
+        {
+            try
+            {
+                var rolUsuarioActual = _currentUserService.GetUserRole();
+                var idUsuarioActual = _currentUserService.GetUserId();
+
+                // Verificar permisos según rol
+                if (rolUsuarioActual == "Admin")
+                {
+                    // Admin puede ver usuarios creados por cualquiera
+                    var usuarios = await _usuarioService.ObtenerUsuariosPorCreadorAsync(creadorId);
+                    return Ok(usuarios);
+                }
+                else if (rolUsuarioActual == "AdminCanal" || rolUsuarioActual == "OficialComercial")
+                {
+                    // Verificar que esté consultando sus propios usuarios creados
+                    if (idUsuarioActual != creadorId)
+                    {
+                        return StatusCode(403, new
+                        {
+                            message = "Acceso denegado",
+                            details = "Solo puedes ver usuarios creados por ti mismo"
+                        });
+                    }
+
+                    var usuarios = await _usuarioService.ObtenerUsuariosPorCreadorAsync(creadorId);
+                    return Ok(usuarios);
+                }
+
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Error interno del servidor",
+                    details = ex.Message
+                });
+            }
+        }
+
+
         // En UsuarioController.cs
         [HttpGet("vendor/estadisticas/{id}")]
         [Authorize]

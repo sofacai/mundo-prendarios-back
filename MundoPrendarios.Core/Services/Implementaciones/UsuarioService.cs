@@ -305,6 +305,17 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             return subcanal != null && subcanal.CanalId == canalId;
         }
+
+        public async Task<IReadOnlyList<UsuarioDto>> ObtenerUsuariosPorCreadorAsync(int creadorId)
+        {
+            // Obtener todos los usuarios creados por el creadorId
+            var usuarios = await _dbContext.Set<Usuario>()
+                .Include(u => u.Rol)
+                .Where(u => u.CreadorId == creadorId)
+                .ToListAsync();
+
+            return usuarios.Select(u => MapUsuarioToDto(u)).ToList();
+        }
     }
 
 
