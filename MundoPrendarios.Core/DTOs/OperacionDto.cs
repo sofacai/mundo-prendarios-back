@@ -45,9 +45,11 @@ namespace MundoPrendarios.Core.DTOs
         public decimal Tasa { get; set; }
         public int ClienteId { get; set; }
         public int PlanId { get; set; }
-        public int? VendedorId { get; set; }
+        public int? VendedorId { get; set; }  
         public int? SubcanalId { get; set; }
         public int? CanalId { get; set; }
+        public int? UsuarioCreadorId { get; set; }
+        public string Estado { get; set; }
     }
 
     public class OperacionCambiarEstadoDto

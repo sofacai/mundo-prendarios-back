@@ -68,7 +68,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 VendedorId = operacionDto.VendedorId ?? usuarioId ?? 0,
                 SubcanalId = operacionDto.SubcanalId ?? 0,
                 CanalId = operacionDto.CanalId ?? cliente.CanalId,
-                FechaCreacion = DateTime.Now
+                FechaCreacion = DateTime.Now,
+                Estado = operacionDto.Estado,
+                UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId
             };
 
             // Si el usuario está logueado y es un vendor, asignar su subcanal si no viene especificado

@@ -1,4 +1,5 @@
-﻿namespace MundoPrendarios.Core.DTOs
+﻿// DTOs/UsuarioDTO.cs
+namespace MundoPrendarios.Core.DTOs
 {
     public class UsuarioDto
     {
@@ -15,6 +16,8 @@
         public DateTime? FechaAlta { get; set; }
         public DateTime? FechaUltimaOperacion { get; set; }
         public int CantidadOperaciones { get; set; }
+        public int? CreadorId { get; set; }
+
     }
 
     public class UsuarioCrearDto

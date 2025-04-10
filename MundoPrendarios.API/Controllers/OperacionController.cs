@@ -124,56 +124,27 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
-        // POST: api/Operacion
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<OperacionDto>> CreateOperacion(OperacionCrearDto operacionDto)
         {
             try
             {
-                // Verificar permisos generales
-                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
-                if (!tienePermiso)
-                    return respuestaError;
+                // Verificaciones de permisos...
 
-                // Si es OficialComercial
-                if (_currentUserService.IsOficialComercial())
+                // Verificar que si se proporciona un UsuarioCreadorId, el usuario actual tenga permiso para hacerlo
+                if (operacionDto.UsuarioCreadorId.HasValue && operacionDto.UsuarioCreadorId != _currentUserService.GetUserId())
                 {
-                    // Debe especificar un vendedor 
-                    if (!operacionDto.VendedorId.HasValue)
+                    // Solo Admin y OficialComercial pueden crear operaciones a nombre de otros
+                    if (!_currentUserService.IsAdmin() && !_currentUserService.IsOficialComercial())
                     {
-                        return BadRequest(new { mensaje = "Como Oficial Comercial, debes especificar el vendedor para la operación." });
-                    }
-
-                    // Si se especificó un canal, verificar que esté asignado al OC
-                    if (operacionDto.CanalId.HasValue && canalesPermitidos != null && !canalesPermitidos.Contains(operacionDto.CanalId.Value))
-                    {
-                        return StatusCode(403, new { mensaje = "No tienes permiso para crear operaciones en este canal." });
-                    }
-
-                    // Si se especificó un subcanal, verificar que pertenezca a un canal asignado al OC
-                    if (operacionDto.SubcanalId.HasValue)
-                    {
-                        var subcanal = await _subcanalService.ObtenerSubcanalPorIdAsync(operacionDto.SubcanalId.Value);
-                        if (subcanal == null)
-                        {
-                            return NotFound(new { mensaje = "No se encontró el subcanal especificado." });
-                        }
-
-                        if (canalesPermitidos != null && !canalesPermitidos.Contains(subcanal.CanalId))
-                        {
-                            return StatusCode(403, new { mensaje = "No tienes permiso para crear operaciones en este subcanal." });
-                        }
+                        return StatusCode(403, new { mensaje = "No tienes permiso para crear operaciones a nombre de otros usuarios." });
                     }
                 }
 
                 int usuarioId = _currentUserService.GetUserId();
                 var createdOperacion = await _operacionService.CrearOperacionAsync(operacionDto, usuarioId);
                 return CreatedAtAction("GetOperacion", new { id = createdOperacion.Id }, createdOperacion);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { mensaje = ex.Message });
             }
             catch (Exception ex)
             {

@@ -5,6 +5,7 @@ using MundoPrendarios.Core.DTOs;
 using MundoPrendarios.Core.Entities;
 using MundoPrendarios.Core.Interfaces;
 using MundoPrendarios.Core.Services.Interfaces;
+using MundoPrendarios.Infrastructure.Services;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,15 +16,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly ITokenService _tokenService;
         private readonly DbContext _dbContext;
+        private readonly ICurrentUserService _currentUserService;
+
 
         public UsuarioService(
             IUsuarioRepository usuarioRepository,
             ITokenService tokenService,
-            DbContext dbContext)
+            DbContext dbContext,
+            ICurrentUserService currentUserService)
         {
             _usuarioRepository = usuarioRepository;
             _tokenService = tokenService;
             _dbContext = dbContext;
+            _currentUserService = currentUserService;
         }
 
         public async Task<UsuarioResponseDto> AutenticarAsync(UsuarioLoginDto loginDto)
@@ -70,7 +75,10 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Telefono = usuarioDto.Telefono,
                 PasswordHash = passwordHash,
                 RolId = usuarioDto.RolId,
-                Activo = true
+                Activo = true,
+                CreadorId = _currentUserService.GetUserId()
+
+
             };
 
             // Si es vendor (RolId = 3), establecer la fecha de alta
@@ -231,7 +239,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
         Activo = usuario.Activo,
         FechaAlta = usuario.FechaAlta,
         FechaUltimaOperacion = usuario.FechaUltimaOperacion,
-        CantidadOperaciones = usuario.CantidadOperaciones
+        CantidadOperaciones = usuario.CantidadOperaciones,
+                CreadorId = usuario.CreadorId // ← AGREGADO
+
             };
         }
 

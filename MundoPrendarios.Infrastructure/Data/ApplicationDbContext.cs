@@ -63,12 +63,18 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasForeignKey(g => g.SubcanalId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Usuario>()
+    .HasOne(u => u.Creador)
+    .WithMany()
+    .HasForeignKey(u => u.CreadorId)
+    .OnDelete(DeleteBehavior.Restrict);
+
             // Canal - Plan
-          //  modelBuilder.Entity<Plan>()
-          //  .HasOne(p => p.Canal)
-           // .WithMany(c => c.Planes)
-           // .HasForeignKey(p => p.CanalId)
-           // .OnDelete(DeleteBehavior.Restrict);
+            //  modelBuilder.Entity<Plan>()
+            //  .HasOne(p => p.Canal)
+            // .WithMany(c => c.Planes)
+            // .HasForeignKey(p => p.CanalId)
+            // .OnDelete(DeleteBehavior.Restrict);
 
             // PlanCanal - Plan
             modelBuilder.Entity<PlanCanal>()

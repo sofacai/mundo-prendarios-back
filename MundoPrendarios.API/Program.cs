@@ -59,10 +59,13 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
-        builder =>
+        policyBuilder =>
         {
-            builder
-                .WithOrigins("http://localhost:8100") // Tu URL de desarrollo de Angular
+            policyBuilder
+                .WithOrigins(
+                    "http://localhost:8100",              
+                    "https://app.mundoprendario.ar"      
+                )
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -122,14 +125,19 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
 
-// Configure el pipeline de solicitudes HTTP
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "MundoPrendarios API V1");
+        c.RoutePrefix = "swagger"; // Accesible en /swagger
+    });
 }
 
 app.UseHttpsRedirection();
+//app.UseStaticFiles();
+
 
 app.UseCors("AllowSpecificOrigin");
 
