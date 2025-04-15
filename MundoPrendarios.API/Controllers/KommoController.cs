@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace TuProyecto.Controllers
@@ -17,7 +19,7 @@ namespace TuProyecto.Controllers
         private readonly string _clientId;
         private readonly string _clientSecret;
         private readonly string _redirectUri;
-        private readonly string _tokenUrl = "https://api-c.kommo.com/oauth2/access_token";
+        private readonly string _tokenUrl = "https://www.kommo.com/oauth2/access_token";
         private readonly string _apiBase = "https://api-c.kommo.com/api/v4";
 
         public KommoController(HttpClient httpClient, IConfiguration configuration)
@@ -42,24 +44,39 @@ namespace TuProyecto.Controllers
 
             try
             {
-                var content = JsonContent.Create(new
-                {
-                    client_id = _clientId,
-                    client_secret = _clientSecret,
-                    grant_type = "authorization_code",
-                    code = request.Code,
-                    redirect_uri = _redirectUri
-                });
+                // Kommo requires the specific subdomain for the account
+                string baseUrl = "https://www.kommo.com/oauth2/access_token";
 
-                var response = await _httpClient.PostAsync(_tokenUrl, content);
+                // Build form data correctly
+                var formContent = new Dictionary<string, string>
+                {
+                    ["client_id"] = _clientId,
+                    ["client_secret"] = _clientSecret,
+                    ["grant_type"] = "authorization_code",
+                    ["code"] = request.Code,
+                    ["redirect_uri"] = _redirectUri
+                };
+
+                // Only add if we have it (this is critical)
+                if (!string.IsNullOrEmpty(request.AccountDomain))
+                {
+                    formContent["account_name"] = request.AccountDomain;
+                }
+
+                var formData = new FormUrlEncodedContent(formContent);
+                var response = await _httpClient.PostAsync(baseUrl, formData);
+
+                // Log the full response for debugging
+                var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    return StatusCode((int)response.StatusCode, errorContent);
+                    return StatusCode((int)response.StatusCode, responseContent);
                 }
 
-                var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
+                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
                 return Ok(tokenResponse);
             }
             catch (Exception ex)
@@ -78,15 +95,15 @@ namespace TuProyecto.Controllers
 
             try
             {
-                var content = JsonContent.Create(new
+                var formData = new FormUrlEncodedContent(new Dictionary<string, string>
                 {
-                    client_id = _clientId,
-                    client_secret = _clientSecret,
-                    grant_type = "refresh_token",
-                    refresh_token = request.RefreshToken
+                    ["client_id"] = _clientId,
+                    ["client_secret"] = _clientSecret,
+                    ["grant_type"] = "refresh_token",
+                    ["refresh_token"] = request.RefreshToken
                 });
 
-                var response = await _httpClient.PostAsync(_tokenUrl, content);
+                var response = await _httpClient.PostAsync(_tokenUrl, formData);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -141,6 +158,7 @@ namespace TuProyecto.Controllers
     public class AuthCodeRequest
     {
         public string Code { get; set; }
+        public string AccountDomain { get; set; }
     }
 
     public class RefreshTokenRequest
@@ -150,9 +168,16 @@ namespace TuProyecto.Controllers
 
     public class TokenResponse
     {
+        [JsonPropertyName("access_token")]
         public string AccessToken { get; set; }
+
+        [JsonPropertyName("refresh_token")]
         public string RefreshToken { get; set; }
+
+        [JsonPropertyName("expires_in")]
         public int ExpiresIn { get; set; }
+
+        [JsonPropertyName("token_type")]
         public string TokenType { get; set; }
     }
 }

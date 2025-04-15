@@ -119,6 +119,12 @@ builder.Services.AddScoped<IPlanCanalService, PlanCanalService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IClienteVendorService, ClienteVendorService>();
 builder.Services.AddScoped<ICanalOficialComercialService, CanalOficialComercialService>();
+builder.Services.AddHttpClient();
+builder.Services.AddRouting(options => options.LowercaseUrls = true);
+builder.Services.AddControllers().AddApplicationPart(typeof(TuProyecto.Controllers.KommoController).Assembly);
+
+
+
 
 
 // Agregar AutoMapper
