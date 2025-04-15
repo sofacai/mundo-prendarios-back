@@ -27,9 +27,9 @@ namespace TuProyecto.Controllers
 
             // Obtener configuración desde appsettings.json
             // o usar los valores directamente como hemos especificado
-            _clientId = "a279e4b2-6bf6-4596-a574-ff524ac1f895";
-            _clientSecret = "wxTdy3qFRCcMqfZgSc6Ic8IREsNMlBscj3Cy6Yn3sGM3RLQDCdQdl5OGEArbD30l";
-            _redirectUri = "https://tu-app.com/callback"; // Cambiar a tu URL real
+            _clientId = "c472bc29-e83d-4fe5-9550-29c7c844b060";
+            _clientSecret = "qgQpgDtzYEbXng5mqEL9DPjHOjUqmZtPLJMMpht1djAm5uve2opRQsWkdhS0A3i3";
+            _redirectUri = "http://localhost:8100/callback"; // Cambiar a tu URL real
         }
 
         [HttpPost("auth")]
