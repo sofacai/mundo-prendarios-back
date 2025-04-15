@@ -63,7 +63,8 @@ builder.Services.AddCors(options =>
         {
             policyBuilder
                 .WithOrigins(
-                    "http://localhost:8101",              
+                    "http://localhost:8101",
+                      "http://localhost:8100",
                     "https://app.mundoprendario.ar"      
                 )
                 .AllowAnyMethod()

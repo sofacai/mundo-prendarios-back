@@ -101,7 +101,11 @@ namespace MundoPrendarios.Core.Mapping
                 .ForMember(dest => dest.VendoresAsignados, opt =>
                     opt.Ignore()) // Esta propiedad se mapea manualmente
                 .ForMember(dest => dest.NumeroOperaciones, opt =>
-                    opt.Ignore()); // Esta propiedad se mapea manualmente
+                    opt.Ignore())
+            .ForMember(dest => dest.Ingresos, opt => opt.MapFrom(src => src.Ingresos))
+.ForMember(dest => dest.Auto, opt => opt.MapFrom(src => src.Auto))
+.ForMember(dest => dest.CodigoPostal, opt => opt.MapFrom(src => src.CodigoPostal))
+    .ForMember(dest => dest.FechaNacimiento, opt => opt.MapFrom(src => src.FechaNacimiento));
 
             CreateMap<Operacion, OperacionDto>()
                 .ForMember(dest => dest.ClienteNombre, opt =>
@@ -134,7 +138,12 @@ namespace MundoPrendarios.Core.Mapping
                     })))
                 .ForMember(dest => dest.NumeroOperaciones, opt => opt.MapFrom(src => src.Operaciones.Count));
 
-            CreateMap<ClienteCrearDto, Cliente>();
+            CreateMap<ClienteCrearDto, Cliente>()
+      .ForMember(dest => dest.Ingresos, opt => opt.MapFrom(src => src.Ingresos))
+      .ForMember(dest => dest.Auto, opt => opt.MapFrom(src => src.Auto))
+       .ForMember(dest => dest.FechaNacimiento, opt => opt.MapFrom(src => src.FechaNacimiento))
+
+      .ForMember(dest => dest.CodigoPostal, opt => opt.MapFrom(src => src.CodigoPostal));
             CreateMap<ClienteOperacionServicioDto, Cliente>();
             CreateMap<ClienteWizardDto, Cliente>();
 

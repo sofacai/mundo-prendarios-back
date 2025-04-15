@@ -13,6 +13,13 @@
         public int CanalId { get; set; }
         public string CanalNombre { get; set; }
         public string NombreCompleto => $"{Nombre} {Apellido}";
+        public int? Ingresos { get; set; }
+        public string Auto { get; set; }
+        public int? CodigoPostal { get; set; }
+        public DateTime? FechaNacimiento { get; set; }
+
+        public string EstadoCivil { get; set; }
+
 
         // Nuevas propiedades
         public int? UsuarioCreadorId { get; set; }

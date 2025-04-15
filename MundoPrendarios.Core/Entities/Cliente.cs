@@ -20,6 +20,12 @@ namespace MundoPrendarios.Core.Entities
         public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
         public DateTime? UltimaModificacion { get; set; }
 
+        public int? Ingresos { get; set; }
+        public string Auto { get; set; }
+        public int? CodigoPostal { get; set; }
+        public DateTime? FechaNacimiento { get; set; }
+
+
         // Relaciones
         public Canal Canal { get; set; }
         public Usuario UsuarioCreador { get; set; }
