@@ -42,12 +42,24 @@ namespace TuProyecto.Controllers
                 return BadRequest(new { error = "Código no proporcionado" });
             }
 
+            if (string.IsNullOrEmpty(request.AccountDomain))
+            {
+                return BadRequest(new { error = "Account domain no proporcionado" });
+            }
+
             try
             {
-                // Kommo requires the specific subdomain for the account
-                string baseUrl = "https://www.kommo.com/oauth2/access_token";
+                // Extraer el subdominio si se proporciona el dominio completo
+                string subdomain = request.AccountDomain;
+                if (subdomain.Contains(".kommo.com"))
+                {
+                    subdomain = subdomain.Split('.')[0];
+                }
 
-                // Build form data correctly
+                // Usar el subdominio específico para la URL del token
+                string tokenUrl = $"https://{subdomain}.kommo.com/oauth2/access_token";
+
+                // Build form data
                 var formContent = new Dictionary<string, string>
                 {
                     ["client_id"] = _clientId,
@@ -57,14 +69,8 @@ namespace TuProyecto.Controllers
                     ["redirect_uri"] = _redirectUri
                 };
 
-                // Only add if we have it (this is critical)
-                if (!string.IsNullOrEmpty(request.AccountDomain))
-                {
-                    formContent["account_name"] = request.AccountDomain;
-                }
-
                 var formData = new FormUrlEncodedContent(formContent);
-                var response = await _httpClient.PostAsync(baseUrl, formData);
+                var response = await _httpClient.PostAsync(tokenUrl, formData);
 
                 // Log the full response for debugging
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -159,6 +165,8 @@ namespace TuProyecto.Controllers
     {
         public string Code { get; set; }
         public string AccountDomain { get; set; }
+        public string ClientId { get; set; }
+        public string State { get; set; }
     }
 
     public class RefreshTokenRequest
