@@ -143,20 +143,8 @@ namespace TuProyecto.Controllers
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-                // Obtener el subdominio del usuario autenticado
-                var accountInfoResponse = await _httpClient.GetAsync($"{_apiBase}/account");
-
-                if (!accountInfoResponse.IsSuccessStatusCode)
-                {
-                    var errorContent = await accountInfoResponse.Content.ReadAsStringAsync();
-                    return StatusCode((int)accountInfoResponse.StatusCode, errorContent);
-                }
-
-                var accountInfo = await accountInfoResponse.Content.ReadFromJsonAsync<AccountInfoResponse>();
-                string subdomain = accountInfo.Subdomain;
-
-                // Usar el subdominio específico para la API
-                string leadsApiUrl = $"https://{subdomain}.kommo.com/api/v4/leads";
+                // Usar directamente la API de Kommo sin intentar obtener el subdominio
+                string leadsApiUrl = "https://api-c.kommo.com/api/v4/leads";
 
                 var response = await _httpClient.PostAsJsonAsync(leadsApiUrl, lead);
 
@@ -174,7 +162,6 @@ namespace TuProyecto.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-
         [HttpPost("webhook")]
         public async Task<IActionResult> HandleWebhook([FromBody] JsonElement data)
         {
