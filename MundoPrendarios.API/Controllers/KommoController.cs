@@ -126,8 +126,8 @@ namespace TuProyecto.Controllers
             }
         }
 
-        [HttpGet("leads")]
-        public async Task<IActionResult> GetLeads()
+        [HttpPost("leads")]
+        public async Task<IActionResult> CreateLead([FromBody] KommoLead lead)
         {
             var authHeader = Request.Headers["Authorization"].ToString();
 
@@ -143,7 +143,22 @@ namespace TuProyecto.Controllers
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-                var response = await _httpClient.GetAsync($"{_apiBase}/leads");
+                // Obtener el subdominio del usuario autenticado
+                var accountInfoResponse = await _httpClient.GetAsync($"{_apiBase}/account");
+
+                if (!accountInfoResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await accountInfoResponse.Content.ReadAsStringAsync();
+                    return StatusCode((int)accountInfoResponse.StatusCode, errorContent);
+                }
+
+                var accountInfo = await accountInfoResponse.Content.ReadFromJsonAsync<AccountInfoResponse>();
+                string subdomain = accountInfo.Subdomain;
+
+                // Usar el subdominio específico para la API
+                string leadsApiUrl = $"https://{subdomain}.kommo.com/api/v4/leads";
+
+                var response = await _httpClient.PostAsJsonAsync(leadsApiUrl, lead);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -159,6 +174,101 @@ namespace TuProyecto.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+        [HttpPost("webhook")]
+        public async Task<IActionResult> HandleWebhook([FromBody] JsonElement data)
+        {
+            try
+            {
+                // Guardar en logs la información recibida
+                string jsonData = data.ToString();
+                Console.WriteLine("Webhook recibido: " + jsonData);
+
+                // Validar que sea un webhook de Kommo (opcional - añadir encabezados de verificación)
+                // var signature = Request.Headers["X-Kommo-Signature"].ToString();
+                // if (string.IsNullOrEmpty(signature)) return Unauthorized();
+
+                // Aquí puedes procesar la información según el tipo de evento
+                // Por ejemplo, actualizar el estado de la operación si un lead cambia de estado
+
+                return Ok(new { success = true, message = "Webhook recibido correctamente" });
+            }
+            catch (Exception ex)
+            {
+                // Registrar error pero devolver éxito para que Kommo no reintente
+                Console.WriteLine("Error procesando webhook: " + ex.Message);
+                return Ok(new { success = false, message = "Error procesando webhook" });
+            }
+        }
+
+        [HttpGet("webhook/setup")]
+        public async Task<IActionResult> SetupWebhook()
+        {
+            if (!Request.Headers.ContainsKey("Authorization"))
+            {
+                return Unauthorized(new { error = "Autorización requerida" });
+            }
+
+            var authHeader = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+            {
+                return Unauthorized(new { error = "Token no válido" });
+            }
+
+            var token = authHeader.Split(' ')[1];
+
+            try
+            {
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+                // Obtener el subdominio
+                var accountInfoResponse = await _httpClient.GetAsync($"{_apiBase}/account");
+                if (!accountInfoResponse.IsSuccessStatusCode)
+                {
+                    var errorContent = await accountInfoResponse.Content.ReadAsStringAsync();
+                    return StatusCode((int)accountInfoResponse.StatusCode, errorContent);
+                }
+
+                var accountInfo = await accountInfoResponse.Content.ReadFromJsonAsync<AccountInfoResponse>();
+                string subdomain = accountInfo.Subdomain;
+
+                // URL del webhook (debe ser accesible públicamente)
+                string webhookUrl = _configuration["Kommo:WebhookUrl"] ??
+                                   "https://tu-aplicacion.com/api/kommo/webhook";
+
+                // Crear o actualizar la suscripción al webhook
+                var webhookData = new
+                {
+                    destination = webhookUrl,
+                    settings = new
+                    {
+                        leads_statuses = new[] { true },
+                        contacts_relations = new[] { true },
+                        leads_pipelines = new[] { true }
+                    },
+                    sort = 1,
+                    is_active = true
+                };
+
+                string webhookApiUrl = $"https://{subdomain}.kommo.com/api/v4/webhooks";
+                var response = await _httpClient.PostAsJsonAsync(webhookApiUrl, webhookData);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return StatusCode((int)response.StatusCode, errorContent);
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                return Ok(new { success = true, message = "Webhook configurado correctamente", data = content });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
     }
 
     public class AuthCodeRequest
@@ -187,5 +297,47 @@ namespace TuProyecto.Controllers
 
         [JsonPropertyName("token_type")]
         public string TokenType { get; set; }
+    }
+
+    public class KommoLead
+    {
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+        public int Status_id { get; set; }
+        public int Pipeline_id { get; set; }
+        public List<CustomFieldValue> Custom_fields_values { get; set; }
+        public EmbeddedEntities _Embedded { get; set; }
+    }
+
+    public class CustomFieldValue
+    {
+        public int Field_id { get; set; }
+        public List<ValueContainer> Values { get; set; }
+    }
+
+    public class ValueContainer
+    {
+        public object Value { get; set; }
+    }
+
+    public class EmbeddedEntities
+    {
+        public List<KommoContact> Contacts { get; set; }
+    }
+
+    public class KommoContact
+    {
+        public int? Id { get; set; }
+        public string Name { get; set; }
+        public string First_name { get; set; }
+        public string Last_name { get; set; }
+        public List<CustomFieldValue> Custom_fields_values { get; set; }
+    }
+
+    public class AccountInfoResponse
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Subdomain { get; set; }
     }
 }
