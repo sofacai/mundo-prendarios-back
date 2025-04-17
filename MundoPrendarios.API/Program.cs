@@ -123,7 +123,13 @@ builder.Services.AddHttpClient();
 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 builder.Services.AddControllers().AddApplicationPart(typeof(TuProyecto.Controllers.KommoController).Assembly);
 
-
+builder.Services.AddHttpClient("KommoApi").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    // Deshabilita la validación de certificados solo en desarrollo
+#if DEBUG
+    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+#endif
+});
 
 
 
