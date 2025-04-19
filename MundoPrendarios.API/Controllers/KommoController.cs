@@ -157,15 +157,23 @@ namespace TuProyecto.Controllers
 
             try
             {
-                // Crear la solicitud
-                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.kommo.com/api/v4/leads");
+                // Registrar los datos recibidos para depuración
+                Console.WriteLine($"Datos recibidos para crear lead: {JsonSerializer.Serialize(leadsData)}");
 
-                // Agregar encabezados según la documentación
+                // Usar el dominio específico de tu cuenta
+                string apiUrl = "https://mundoprendario.kommo.com/api/v4/leads";
+
+                Console.WriteLine($"Enviando solicitud a: {apiUrl}");
+
+                // Crear la solicitud
+                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
                 request.Headers.Add("Authorization", $"Bearer {token}");
 
-                // Serializar los datos del lead como un array
                 var jsonData = JsonSerializer.Serialize(leadsData);
                 request.Content = new StringContent(jsonData, System.Text.Encoding.UTF8, "application/json");
+
+                Console.WriteLine($"Token: Bearer {token.Substring(0, Math.Min(10, token.Length))}...");
+                Console.WriteLine($"Body: {jsonData}");
 
                 // Enviar la solicitud
                 var response = await _httpClient.SendAsync(request);
@@ -175,13 +183,47 @@ namespace TuProyecto.Controllers
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return StatusCode((int)response.StatusCode, responseContent);
+                    // Intentar con URL alternativa si falla
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        // Probar con subdominios alternativos
+                        string[] alternativeUrls = new[] {
+                    "https://api.kommo.com/api/v4/leads",
+                    "https://api-c.kommo.com/api/v4/leads"
+                };
+
+                        foreach (var altUrl in alternativeUrls)
+                        {
+                            Console.WriteLine($"Intentando con URL alternativa: {altUrl}");
+
+                            request = new HttpRequestMessage(HttpMethod.Post, altUrl);
+                            request.Headers.Add("Authorization", $"Bearer {token}");
+                            request.Content = new StringContent(jsonData, System.Text.Encoding.UTF8, "application/json");
+
+                            response = await _httpClient.SendAsync(request);
+                            responseContent = await response.Content.ReadAsStringAsync();
+
+                            Console.WriteLine($"Status: {response.StatusCode}, Response: {responseContent}");
+
+                            if (response.IsSuccessStatusCode)
+                            {
+                                break; // Salir del bucle si tiene éxito
+                            }
+                        }
+                    }
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return StatusCode((int)response.StatusCode, responseContent);
+                    }
                 }
 
                 return Ok(JsonSerializer.Deserialize<object>(responseContent));
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error en CreateLead: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
