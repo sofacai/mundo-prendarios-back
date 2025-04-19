@@ -144,7 +144,7 @@ namespace TuProyecto.Controllers
         }
 
         [HttpPost("leads")]
-        public async Task<IActionResult> CreateLead([FromBody] object leadsData)
+        public async Task<IActionResult> CreateLead([FromBody] JsonElement leadsData)
         {
             var authHeader = Request.Headers["Authorization"].ToString();
 
@@ -157,65 +157,57 @@ namespace TuProyecto.Controllers
 
             try
             {
-                // Registrar los datos recibidos para depuración
-                Console.WriteLine($"Datos recibidos para crear lead: {JsonSerializer.Serialize(leadsData)}");
+                // Registrar los datos JSON recibidos para depuración
+                string rawData = leadsData.GetRawText();
+                Console.WriteLine($"Datos JSON recibidos: {rawData}");
 
-                // Usar el dominio específico de tu cuenta
+                // Usar directamente la API v4 standard para leads en lugar de complex
                 string apiUrl = "https://mundoprendario.kommo.com/api/v4/leads";
-
                 Console.WriteLine($"Enviando solicitud a: {apiUrl}");
 
-                // Crear la solicitud
+                // Crear y enviar solicitud
                 var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
                 request.Headers.Add("Authorization", $"Bearer {token}");
 
-                var jsonData = JsonSerializer.Serialize(leadsData);
-                request.Content = new StringContent(jsonData, System.Text.Encoding.UTF8, "application/json");
+                // Usar el JSON tal como lo recibimos
+                request.Content = new StringContent(rawData, System.Text.Encoding.UTF8, "application/json");
 
                 Console.WriteLine($"Token: Bearer {token.Substring(0, Math.Min(10, token.Length))}...");
-                Console.WriteLine($"Body: {jsonData}");
+                Console.WriteLine($"Body enviado: {rawData}");
 
                 // Enviar la solicitud
                 var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
-
                 Console.WriteLine($"Status: {response.StatusCode}, Response: {responseContent}");
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Intentar con URL alternativa si falla
+                    // Intentar con URLs alternativas
                     if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
-                        // Probar con subdominios alternativos
                         string[] alternativeUrls = new[] {
-                    "https://api.kommo.com/api/v4/leads",
-                    "https://api-c.kommo.com/api/v4/leads"
-                };
+                            "https://api.kommo.com/api/v4/leads",
+                            "https://api-c.kommo.com/api/v4/leads"
+                        };
 
                         foreach (var altUrl in alternativeUrls)
                         {
                             Console.WriteLine($"Intentando con URL alternativa: {altUrl}");
-
                             request = new HttpRequestMessage(HttpMethod.Post, altUrl);
                             request.Headers.Add("Authorization", $"Bearer {token}");
-                            request.Content = new StringContent(jsonData, System.Text.Encoding.UTF8, "application/json");
+                            request.Content = new StringContent(rawData, System.Text.Encoding.UTF8, "application/json");
 
                             response = await _httpClient.SendAsync(request);
                             responseContent = await response.Content.ReadAsStringAsync();
-
                             Console.WriteLine($"Status: {response.StatusCode}, Response: {responseContent}");
 
                             if (response.IsSuccessStatusCode)
-                            {
-                                break; // Salir del bucle si tiene éxito
-                            }
+                                break;
                         }
                     }
 
                     if (!response.IsSuccessStatusCode)
-                    {
                         return StatusCode((int)response.StatusCode, responseContent);
-                    }
                 }
 
                 return Ok(JsonSerializer.Deserialize<object>(responseContent));
