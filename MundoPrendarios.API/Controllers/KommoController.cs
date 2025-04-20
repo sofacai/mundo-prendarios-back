@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -34,37 +33,21 @@ namespace TuProyecto.Controllers
         public async Task<IActionResult> ExchangeCode([FromBody] AuthCodeRequest request)
         {
             if (string.IsNullOrEmpty(request.Code))
-            {
                 return BadRequest(new { error = "Código no proporcionado" });
-            }
 
             try
             {
-                // Extraer el subdominio si se proporciona el dominio completo
-                string subdomain = "api-c"; // Valor por defecto
-
+                string subdomain = "api-c";
                 if (!string.IsNullOrEmpty(request.AccountDomain))
                 {
                     if (request.AccountDomain.Contains(".kommo.com"))
-                    {
                         subdomain = request.AccountDomain.Split('.')[0];
-                    }
                     else
-                    {
                         subdomain = request.AccountDomain;
-                    }
                 }
 
-                // Construir la URL del endpoint de token
-                string tokenUrl = "https://www.kommo.com/oauth2/access_token";
+                string tokenUrl = $"https://{subdomain}.kommo.com/oauth2/access_token";
 
-                // Si tenemos un subdominio específico, usarlo
-                if (!string.IsNullOrEmpty(subdomain) && subdomain != "www")
-                {
-                    tokenUrl = $"https://{subdomain}.kommo.com/oauth2/access_token";
-                }
-
-                // Construir los datos del formulario
                 var formContent = new Dictionary<string, string>
                 {
                     ["client_id"] = _clientId,
@@ -74,33 +57,17 @@ namespace TuProyecto.Controllers
                     ["redirect_uri"] = _redirectUri
                 };
 
-                // Registrar la URL y los datos para depuración
-                Console.WriteLine($"Token URL: {tokenUrl}");
-                Console.WriteLine($"Form Data: {JsonSerializer.Serialize(formContent)}");
-
-                var formData = new FormUrlEncodedContent(formContent);
-                var response = await _httpClient.PostAsync(tokenUrl, formData);
-
-                // Registrar la respuesta completa para depuración
+                var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(formContent));
                 var responseContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Response: {responseContent}");
 
                 if (!response.IsSuccessStatusCode)
-                {
                     return StatusCode((int)response.StatusCode, responseContent);
-                }
 
-                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 return Ok(tokenResponse);
             }
             catch (Exception ex)
             {
-                // Registrar la excepción para depuración
-                Console.WriteLine($"Error in ExchangeCode: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-
                 return StatusCode(500, new { error = ex.Message });
             }
         }
@@ -109,13 +76,10 @@ namespace TuProyecto.Controllers
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             if (string.IsNullOrEmpty(request.RefreshToken))
-            {
                 return BadRequest(new { error = "Refresh token no proporcionado" });
-            }
 
             try
             {
-                // Preparar los parámetros exactamente como los espera Kommo
                 var content = new FormUrlEncodedContent(new Dictionary<string, string>
                 {
                     ["client_id"] = _clientId,
@@ -124,16 +88,11 @@ namespace TuProyecto.Controllers
                     ["refresh_token"] = request.RefreshToken
                 });
 
-                // Usar la URL correcta de OAuth 2.0
                 var response = await _httpClient.PostAsync("https://kommo.com/oauth2/access_token", content);
                 var responseBody = await response.Content.ReadAsStringAsync();
 
-                Console.WriteLine($"Respuesta de refresh: {responseBody}");
-
                 if (!response.IsSuccessStatusCode)
-                {
                     return StatusCode((int)response.StatusCode, responseBody);
-                }
 
                 return Ok(JsonSerializer.Deserialize<object>(responseBody));
             }
@@ -147,105 +106,180 @@ namespace TuProyecto.Controllers
         public async Task<IActionResult> CreateLead([FromBody] JsonElement leadsData)
         {
             var authHeader = Request.Headers["Authorization"].ToString();
-
             if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
-            {
                 return Unauthorized(new { error = "No autorizado" });
-            }
 
             var token = authHeader.Split(' ')[1];
 
             try
             {
-                // Registrar los datos JSON recibidos para depuración
                 string rawData = leadsData.GetRawText();
-                Console.WriteLine($"Datos JSON recibidos: {rawData}");
-
-                // Usar directamente la API v4 standard para leads en lugar de complex
                 string apiUrl = "https://mundoprendario.kommo.com/api/v4/leads";
-                Console.WriteLine($"Enviando solicitud a: {apiUrl}");
 
-                // Crear y enviar solicitud
-                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
-                request.Headers.Add("Authorization", $"Bearer {token}");
+                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+                {
+                    Headers = { { "Authorization", $"Bearer {token}" } },
+                    Content = new StringContent(rawData, System.Text.Encoding.UTF8, "application/json")
+                };
 
-                // Usar el JSON tal como lo recibimos
-                request.Content = new StringContent(rawData, System.Text.Encoding.UTF8, "application/json");
-
-                Console.WriteLine($"Token: Bearer {token.Substring(0, Math.Min(10, token.Length))}...");
-                Console.WriteLine($"Body enviado: {rawData}");
-
-                // Enviar la solicitud
                 var response = await _httpClient.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Status: {response.StatusCode}, Response: {responseContent}");
 
                 if (!response.IsSuccessStatusCode)
-                {
-                    // Intentar con URLs alternativas
-                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                    {
-                        string[] alternativeUrls = new[] {
-                            "https://api.kommo.com/api/v4/leads",
-                            "https://api-c.kommo.com/api/v4/leads"
-                        };
-
-                        foreach (var altUrl in alternativeUrls)
-                        {
-                            Console.WriteLine($"Intentando con URL alternativa: {altUrl}");
-                            request = new HttpRequestMessage(HttpMethod.Post, altUrl);
-                            request.Headers.Add("Authorization", $"Bearer {token}");
-                            request.Content = new StringContent(rawData, System.Text.Encoding.UTF8, "application/json");
-
-                            response = await _httpClient.SendAsync(request);
-                            responseContent = await response.Content.ReadAsStringAsync();
-                            Console.WriteLine($"Status: {response.StatusCode}, Response: {responseContent}");
-
-                            if (response.IsSuccessStatusCode)
-                                break;
-                        }
-                    }
-
-                    if (!response.IsSuccessStatusCode)
-                        return StatusCode((int)response.StatusCode, responseContent);
-                }
+                    return StatusCode((int)response.StatusCode, responseContent);
 
                 return Ok(JsonSerializer.Deserialize<object>(responseContent));
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en CreateLead: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-    }
 
-    public class AuthCodeRequest
-    {
-        public string Code { get; set; }
-        public string AccountDomain { get; set; }
-        public string ClientId { get; set; }
-        public string State { get; set; }
-    }
+        [HttpPost("contacts")]
+        public async Task<IActionResult> CreateContact([FromBody] JsonElement contactoPayload)
+        {
+            var authHeader = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                return Unauthorized(new { error = "No autorizado" });
 
-    public class RefreshTokenRequest
-    {
-        public string RefreshToken { get; set; }
-    }
+            var token = authHeader.Split(' ')[1];
 
-    public class TokenResponse
-    {
-        [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; }
+            try
+            {
+                string rawJson = contactoPayload.GetRawText();
 
-        [JsonPropertyName("refresh_token")]
-        public string RefreshToken { get; set; }
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://mundoprendario.kommo.com/api/v4/contacts")
+                {
+                    Headers = { { "Authorization", $"Bearer {token}" } },
+                    Content = new StringContent(rawJson, System.Text.Encoding.UTF8, "application/json")
+                };
 
-        [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
 
-        [JsonPropertyName("token_type")]
-        public string TokenType { get; set; }
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, responseContent);
+
+                return Ok(JsonSerializer.Deserialize<object>(responseContent));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("companies")]
+        public async Task<IActionResult> CreateCompany([FromBody] JsonElement companyData)
+        {
+            var authHeader = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                return Unauthorized(new { error = "No autorizado" });
+
+            var token = authHeader.Split(' ')[1];
+
+            try
+            {
+                string rawJson = companyData.GetRawText();
+                string apiUrl = "https://mundoprendario.kommo.com/api/v4/companies";
+
+                var request = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+                {
+                    Headers = { { "Authorization", $"Bearer {token}" } },
+                    Content = new StringContent(rawJson, System.Text.Encoding.UTF8, "application/json")
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, responseContent);
+
+                return Ok(JsonSerializer.Deserialize<object>(responseContent));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+
+
+        [HttpPost("contacts/{contactId}/link")]
+        public async Task<IActionResult> LinkContactToLead(int contactId, [FromBody] LinkRequest request)
+        {
+            var authHeader = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                return Unauthorized(new { error = "No autorizado" });
+
+            var token = authHeader.Split(' ')[1];
+
+            try
+            {
+                var apiUrl = $"https://mundoprendario.kommo.com/api/v4/contacts/{contactId}/link";
+                var jsonContent = JsonSerializer.Serialize(request);
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, apiUrl)
+                {
+                    Headers = { { "Authorization", $"Bearer {token}" } },
+                    Content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json")
+                };
+
+                var response = await _httpClient.SendAsync(httpRequest);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, responseBody);
+
+                return Ok(JsonSerializer.Deserialize<object>(responseBody));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        public class AuthCodeRequest
+        {
+            public string Code { get; set; }
+            public string AccountDomain { get; set; }
+            public string ClientId { get; set; }
+            public string State { get; set; }
+        }
+
+        public class RefreshTokenRequest
+        {
+            public string RefreshToken { get; set; }
+        }
+
+        public class TokenResponse
+        {
+            [JsonPropertyName("access_token")]
+            public string AccessToken { get; set; }
+
+            [JsonPropertyName("refresh_token")]
+            public string RefreshToken { get; set; }
+
+            [JsonPropertyName("expires_in")]
+            public int ExpiresIn { get; set; }
+
+            [JsonPropertyName("token_type")]
+            public string TokenType { get; set; }
+        }
+
+        public class LinkRequest
+        {
+            [JsonPropertyName("to")]
+            public List<LinkToEntity> To { get; set; }
+        }
+
+        public class LinkToEntity
+        {
+            [JsonPropertyName("to_entity_id")]
+            public int ToEntityId { get; set; }
+
+            [JsonPropertyName("to_entity_type")]
+            public string ToEntityType { get; set; } = "leads";
+        }
     }
 }
