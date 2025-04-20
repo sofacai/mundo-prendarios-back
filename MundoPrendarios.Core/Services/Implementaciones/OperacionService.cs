@@ -472,5 +472,36 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             var operaciones = await _operacionRepository.GetOperacionesLiquidadasAsync();
             return _mapper.Map<List<OperacionDto>>(operaciones);
         }
+
+        public async Task<OperacionDto> ActualizarDesdeWebhookAsync(OperacionWebhookUpdateDto dto)
+        {
+            var operacion = await _operacionRepository.GetByIdAsync(dto.OperacionId);
+            if (operacion == null)
+                throw new KeyNotFoundException($"No se encontró la operación con ID {dto.OperacionId}");
+
+            // Actualizar campos aprobados si están presentes
+            if (dto.MontoAprobado.HasValue)
+                operacion.MontoAprobado = dto.MontoAprobado;
+
+            if (dto.TasaAprobada.HasValue)
+                operacion.TasaAprobada = dto.TasaAprobada;
+
+            if (dto.MesesAprobados.HasValue)
+                operacion.MesesAprobados = dto.MesesAprobados;
+
+            if (!string.IsNullOrEmpty(dto.PlanAprobadoNombre))
+                operacion.PlanAprobadoNombre = dto.PlanAprobadoNombre;
+
+            if (!string.IsNullOrEmpty(dto.EstadoDesdeEtiqueta))
+                operacion.Estado = dto.EstadoDesdeEtiqueta;
+
+            operacion.FechaAprobacion = DateTime.UtcNow;
+
+            await _operacionRepository.UpdateAsync(operacion);
+
+            var actualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
+            return _mapper.Map<OperacionDto>(actualizada);
+        }
+
     }
 }

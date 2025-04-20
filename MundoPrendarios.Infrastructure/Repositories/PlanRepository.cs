@@ -44,5 +44,6 @@ namespace MundoPrendarios.Infrastructure.Repositories
                          p.CuotasAplicables == cuotasStr))
                 .ToListAsync();
         }
+
     }
 }

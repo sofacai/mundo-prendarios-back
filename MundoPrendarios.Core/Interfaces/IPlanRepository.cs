@@ -7,5 +7,6 @@ namespace MundoPrendarios.Core.Interfaces
         Task<IReadOnlyList<Plan>> GetPlanesByCanalAsync(int canalId);
         Task<IReadOnlyList<Plan>> GetActivePlanesAsync();
         Task<IReadOnlyList<Plan>> GetPlanesByRangeAsync(decimal monto, int cuotas);
+
     }
 }

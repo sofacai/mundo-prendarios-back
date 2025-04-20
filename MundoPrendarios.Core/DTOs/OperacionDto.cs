@@ -69,6 +69,8 @@ namespace MundoPrendarios.Core.DTOs
         public int MesesAprobados { get; set; }
         public decimal TasaAprobada { get; set; }
         public int PlanAprobadoId { get; set; }
+        public string PlanAprobadoNombre { get; set; }
+
     }
 
 

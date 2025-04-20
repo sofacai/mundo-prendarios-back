@@ -24,6 +24,8 @@
         public int? PlanAprobadoId { get; set; }
         public Plan PlanAprobado { get; set; }
 
+        public string PlanAprobadoNombre { get; set; }
+
 
         public DateTime? FechaAprobacion { get; set; }
 
