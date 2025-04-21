@@ -27,7 +27,6 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             _operacionRepository = operacionRepository;
             _mapper = mapper;
         }
-
         public async Task<ClienteDto> CrearClienteAsync(ClienteCrearDto clienteDto, int? usuarioCreadorId = null)
         {
             // Mapear DTO a entidad
@@ -41,13 +40,12 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             cliente.FechaCreacion = DateTime.UtcNow;
 
-            // Guardar en la base de datos
+            // Guardar cliente directamente, sin verificar duplicados por DNI o CUIL
             await _clienteRepository.AddAsync(cliente);
 
-            // Si el usuario creador es un vendor, asignarlo automáticamente al cliente
+            // Si se solicita autoasignar al vendor
             if (usuarioCreadorId.HasValue && clienteDto.AutoasignarVendor)
             {
-                // Crear la relación cliente-vendor
                 var clienteVendor = new ClienteVendors
                 {
                     ClienteId = cliente.Id,
@@ -59,7 +57,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 await _clienteVendorRepository.AddAsync(clienteVendor);
             }
 
-            // Obtener cliente con detalles para retornar
+            // Obtener cliente con detalles y devolver DTO
             var clienteResultado = await _clienteRepository.GetClienteWithDetailsAsync(cliente.Id);
             return _mapper.Map<ClienteDto>(clienteResultado);
         }
