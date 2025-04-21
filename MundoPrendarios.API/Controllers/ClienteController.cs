@@ -91,29 +91,11 @@ namespace MundoPrendarios.API.Controllers
                 return BadRequest("Se debe proporcionar al menos un CUIL o DNI");
             }
 
-            // Si se proporcionó DNI pero no CUIL, verificar si ya existe un cliente con ese DNI
-            if (!string.IsNullOrEmpty(clienteDto.Dni) && string.IsNullOrEmpty(clienteDto.Cuil))
-            {
-                var clienteExistente = await _clienteService.ObtenerClientePorDniAsync(clienteDto.Dni);
-                if (clienteExistente != null)
-                {
-                    return Conflict($"Ya existe un cliente con el DNI: {clienteDto.Dni}");
-                }
-            }
-
-            // Si se proporcionó CUIL, verificar si ya existe un cliente con ese CUIL
-            if (!string.IsNullOrEmpty(clienteDto.Cuil))
-            {
-                var clienteExistente = await _clienteService.ObtenerClientePorCuilAsync(clienteDto.Cuil);
-                if (clienteExistente != null)
-                {
-                    return Conflict($"Ya existe un cliente con el CUIL: {clienteDto.Cuil}");
-                }
-            }
-
-            var nuevoCliente = await _clienteService.CrearClienteAsync(clienteDto);
+            var nuevoCliente = await _clienteService.CrearClienteAsync(clienteDto, null);
             return CreatedAtAction(nameof(GetCliente), new { id = nuevoCliente.Id }, nuevoCliente);
         }
+
+
 
         // PUT: api/clientes/5
         [HttpPut("{id}")]
