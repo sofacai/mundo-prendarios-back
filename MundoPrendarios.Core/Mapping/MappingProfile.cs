@@ -113,7 +113,7 @@ namespace MundoPrendarios.Core.Mapping
                 .ForMember(dest => dest.PlanNombre, opt =>
                     opt.MapFrom(src => src.Plan != null ? src.Plan.Nombre : string.Empty))
                 .ForMember(dest => dest.PlanAprobadoNombre, opt =>
-                    opt.MapFrom(src => src.PlanAprobado != null ? src.PlanAprobado.Nombre : string.Empty))
+    opt.MapFrom(src => src.PlanAprobadoNombre))
                 .ForMember(dest => dest.VendedorNombre, opt =>
                     opt.MapFrom(src => src.Vendedor != null ? $"{src.Vendedor.Nombre} {src.Vendedor.Apellido}" : string.Empty))
                 .ForMember(dest => dest.UsuarioCreadorNombre, opt =>

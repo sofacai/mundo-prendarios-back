@@ -54,13 +54,13 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                     OperacionId = operacionId
                 };
 
-                // Extraer campos usando valores específicos
+                // Extraer campos usando valores específicos (actualizado)
                 foreach (var key in form.Keys)
                 {
                     // MontoAprobado: field_id 964766
-                    if (key.Contains("field_id") && form[key] == "964766")
+                    if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964766")
                     {
-                        string valueKey = key.Replace("field_id", "values][0][value");
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
                         if (form.ContainsKey(valueKey))
                         {
                             var value = form[valueKey].ToString();
@@ -69,10 +69,11 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                             updateDto.MontoAprobado = monto;
                         }
                     }
+
                     // TasaAprobada: field_id 964768
-                    else if (key.Contains("field_id") && form[key] == "964768")
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964768")
                     {
-                        string valueKey = key.Replace("field_id", "values][0][value");
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
                         if (form.ContainsKey(valueKey))
                         {
                             var value = form[valueKey].ToString();
@@ -81,10 +82,23 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                             updateDto.TasaAprobada = tasa;
                         }
                     }
-                    // MesesAprobados: field_id 964772
-                    else if (key.Contains("field_id") && form[key] == "964772")
+
+                    // TipoPrestamoAprobado: field_id 964770
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964770")
                     {
-                        string valueKey = key.Replace("field_id", "values][0][value");
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
+                            operacion.PlanAprobadoNombre = value;
+                            updateDto.PlanAprobadoNombre = value;
+                        }
+                    }
+
+                    // MesesAprobados: field_id 964772
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964772")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
                         if (form.ContainsKey(valueKey))
                         {
                             var value = form[valueKey].ToString();
@@ -93,17 +107,6 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                                 operacion.MesesAprobados = meses;
                                 updateDto.MesesAprobados = meses;
                             }
-                        }
-                    }
-
-                    else if (key.Contains("field_id") && form[key] == "964770")
-                    {
-                        string valueKey = key.Replace("field_id", "values][0][value");
-                        if (form.ContainsKey(valueKey))
-                        {
-                            var value = form[valueKey].ToString();
-                            operacion.PlanAprobadoNombre = value;
-                            updateDto.PlanAprobadoNombre = value;
                         }
                     }
                 }
