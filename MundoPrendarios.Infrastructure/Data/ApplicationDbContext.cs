@@ -116,6 +116,7 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasOne(o => o.Vendedor)
                 .WithMany(u => u.Operaciones)
                 .HasForeignKey(o => o.VendedorId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Operación - Subcanal
