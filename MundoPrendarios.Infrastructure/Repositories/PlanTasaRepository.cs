@@ -37,5 +37,15 @@ namespace MundoPrendarios.Infrastructure.Repositories
             _dbContext.PlanesTasas.RemoveRange(tasas);
             await _dbContext.SaveChangesAsync();
         }
+
+
+        public async Task<PlanTasa> GetTasaByPlanIdPlazoAndAnioAsync(int planId, int plazo, int anioAuto)
+        {
+            // Primero obtenemos la tasa por planId y plazo
+            var tasa = await _dbContext.PlanesTasas
+                .FirstOrDefaultAsync(pt => pt.PlanId == planId && pt.Plazo == plazo);
+
+            return tasa; // La lógica de selección de TasaA, TasaB o TasaC se hará en el servicio
+        }
     }
 }

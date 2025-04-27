@@ -282,18 +282,26 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasIndex(o => o.VendedorId);
 
             modelBuilder.Entity<PlanTasa>()
-    .HasOne(pt => pt.Plan)
-    .WithMany(p => p.Tasas)
-    .HasForeignKey(pt => pt.PlanId)
-    .OnDelete(DeleteBehavior.Cascade);
+         .HasOne(pt => pt.Plan)
+         .WithMany(p => p.Tasas)
+         .HasForeignKey(pt => pt.PlanId)
+         .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<PlanTasa>()
-    .Property(pt => pt.Tasa)
+     .Property(pt => pt.TasaA)
+     .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<PlanTasa>()
+    .Property(pt => pt.TasaB)
     .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<PlanTasa>()
-    .HasIndex(pt => new { pt.PlanId, pt.Plazo })
-    .IsUnique();
+                .Property(pt => pt.TasaC)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<PlanTasa>()
+        .HasIndex(pt => new { pt.PlanId, pt.Plazo })
+        .IsUnique();
         }
     }
 }
