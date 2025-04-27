@@ -89,16 +89,23 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 throw new ArgumentException($"El plazo {tasaDto.Plazo} no es válido. Los plazos permitidos son: 12, 18, 24, 36, 48 y 60 meses.");
             }
 
-            // Verificar si el plazo ha cambiado, y si hay conflicto con otra tasa existente
+            // Verificar si el plazo ha cambiado
             if (tasa.Plazo != tasaDto.Plazo)
             {
+                // Solo validar conflictos si el plazo ha cambiado
                 var tasaExistente = await _planTasaRepository.GetTasaByPlanIdAndPlazoAsync(tasa.PlanId, tasaDto.Plazo);
-                if (tasaExistente != null && tasaExistente.Id != tasaId)
+
+                if (tasaExistente != null)
                 {
-                    throw new InvalidOperationException($"Ya existe una tasa para el plazo de {tasaDto.Plazo} meses en este plan");
+                    // Verificar que no sea la misma tasa (por ID)
+                    if (tasaExistente.Id != tasaId)
+                    {
+                        throw new InvalidOperationException($"Ya existe una tasa para el plazo de {tasaDto.Plazo} meses en este plan");
+                    }
                 }
             }
 
+            // Actualizar los valores de la tasa
             tasa.Plazo = tasaDto.Plazo;
             tasa.TasaA = tasaDto.TasaA;
             tasa.TasaB = tasaDto.TasaB;
@@ -107,7 +114,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             await _planTasaRepository.UpdateAsync(tasa);
         }
 
-       
+
 
         public async Task EliminarTasaAsync(int tasaId)
         {

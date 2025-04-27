@@ -99,6 +99,9 @@ namespace MundoPrendarios.API.Controllers
                     return StatusCode(403, new { mensaje = "Solo los administradores pueden actualizar tasas." });
                 }
 
+                // Añadir log para debug
+                Console.WriteLine($"Actualizando tasa ID: {id}, Plazo: {tasaDto.Plazo}");
+
                 await _planTasaService.ActualizarTasaAsync(id, tasaDto);
                 return Ok(new { mensaje = "Tasa actualizada correctamente." });
             }
@@ -108,6 +111,8 @@ namespace MundoPrendarios.API.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                // Log detallado del error
+                Console.WriteLine($"Error al actualizar tasa: {ex.Message}");
                 return BadRequest(new { mensaje = ex.Message });
             }
             catch (ArgumentException ex)
