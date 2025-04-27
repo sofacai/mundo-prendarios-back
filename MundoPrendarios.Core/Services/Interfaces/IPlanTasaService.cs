@@ -9,5 +9,7 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task<PlanTasaDto> CrearTasaAsync(int planId, PlanTasaCrearDto tasaDto);
         Task ActualizarTasaAsync(int tasaId, PlanTasaCrearDto tasaDto);
         Task EliminarTasaAsync(int tasaId);
+        Task<List<PlanTasaDto>> ObtenerTasasPorRangoAsync(decimal monto, int cuotas);
+        Task<decimal> ObtenerTasaPorAnioAutoAsync(int planId, int plazo, int anioAuto);
     }
 }

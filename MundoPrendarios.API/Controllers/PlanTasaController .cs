@@ -144,5 +144,34 @@ namespace MundoPrendarios.API.Controllers
                 return StatusCode(500, new { mensaje = ex.Message });
             }
         }
+
+
+        [HttpGet("cotizar")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<object>>> CotizarTasa(
+    [FromQuery] decimal monto,
+    [FromQuery] int cuotas,
+    [FromQuery] int antiguedad)
+        {
+            try
+            {
+                var tasas = await _planTasaService.ObtenerTasasPorRangoAsync(monto, cuotas);
+
+                // Filtrar según la antigüedad del auto
+                var resultado = tasas.Select(t => new
+                {
+                    PlanId = t.PlanId,
+                    Plazo = t.Plazo,
+                    Tasa = antiguedad <= 10 ? t.TasaA :
+                          (antiguedad <= 12 ? t.TasaB : t.TasaC)
+                });
+
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
     }
 }

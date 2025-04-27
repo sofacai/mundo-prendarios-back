@@ -47,7 +47,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                     {
                         PlanId = plan.Id,
                         Plazo = tasaDto.Plazo,
-                        Tasa = tasaDto.Tasa
+                        TasaA = tasaDto.TasaA,
+                        TasaB = tasaDto.TasaB,
+                        TasaC = tasaDto.TasaC
                     };
 
                     await _planTasaRepository.AddAsync(tasa);
@@ -58,7 +60,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         Id = tasa.Id,
                         PlanId = tasa.PlanId,
                         Plazo = tasa.Plazo,
-                        Tasa = tasa.Tasa
+                        TasaA = tasa.TasaA,
+                        TasaB = tasa.TasaB,
+                        TasaC = tasa.TasaC
                     });
                 }
                 catch (Exception)
@@ -205,10 +209,14 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
                     if (dictTasasExistentes.TryGetValue(tasaDto.Plazo, out var tasaExistente))
                     {
-                        // Actualizar tasa existente si cambia el valor
-                        if (tasaExistente.Tasa != tasaDto.Tasa)
+                        // Actualizar tasa existente si cambia algún valor
+                        if (tasaExistente.TasaA != tasaDto.TasaA ||
+                            tasaExistente.TasaB != tasaDto.TasaB ||
+                            tasaExistente.TasaC != tasaDto.TasaC)
                         {
-                            tasaExistente.Tasa = tasaDto.Tasa;
+                            tasaExistente.TasaA = tasaDto.TasaA;
+                            tasaExistente.TasaB = tasaDto.TasaB;
+                            tasaExistente.TasaC = tasaDto.TasaC;
                             await _planTasaRepository.UpdateAsync(tasaExistente);
                         }
                     }
@@ -219,7 +227,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         {
                             PlanId = id,
                             Plazo = tasaDto.Plazo,
-                            Tasa = tasaDto.Tasa
+                            TasaA = tasaDto.TasaA,
+                            TasaB = tasaDto.TasaB,
+                            TasaC = tasaDto.TasaC
                         };
                         await _planTasaRepository.AddAsync(nuevaTasa);
                     }

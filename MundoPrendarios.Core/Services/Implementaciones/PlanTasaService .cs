@@ -65,7 +65,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             {
                 PlanId = planId,
                 Plazo = tasaDto.Plazo,
-                Tasa = tasaDto.Tasa
+                TasaA = tasaDto.TasaA,
+                TasaB = tasaDto.TasaB,
+                TasaC = tasaDto.TasaC
             };
 
             await _planTasaRepository.AddAsync(tasa);
@@ -98,10 +100,14 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             }
 
             tasa.Plazo = tasaDto.Plazo;
-            tasa.Tasa = tasaDto.Tasa;
+            tasa.TasaA = tasaDto.TasaA;
+            tasa.TasaB = tasaDto.TasaB;
+            tasa.TasaC = tasaDto.TasaC;
 
             await _planTasaRepository.UpdateAsync(tasa);
         }
+
+       
 
         public async Task EliminarTasaAsync(int tasaId)
         {
@@ -112,6 +118,46 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             }
 
             await _planTasaRepository.DeleteAsync(tasa);
+        }
+
+        public async Task<List<PlanTasaDto>> ObtenerTasasPorRangoAsync(decimal monto, int cuotas)
+        {
+            var planes = await _planRepository.GetPlanesByRangeAsync(monto, cuotas);
+            var resultado = new List<PlanTasaDto>();
+
+            foreach (var plan in planes)
+            {
+                var tasa = await _planTasaRepository.GetTasaByPlanIdAndPlazoAsync(plan.Id, cuotas);
+                if (tasa != null)
+                {
+                    resultado.Add(_mapper.Map<PlanTasa, PlanTasaDto>(tasa));
+                }
+            }
+
+            return resultado;
+        }
+
+        public async Task<decimal> ObtenerTasaPorAnioAutoAsync(int planId, int plazo, int anioAuto)
+        {
+            var tasa = await _planTasaRepository.GetTasaByPlanIdAndPlazoAsync(planId, plazo);
+            if (tasa == null)
+            {
+                throw new KeyNotFoundException($"No se encontró una tasa para el plan ID {planId} con plazo {plazo} meses");
+            }
+
+            // Determinar qué tasa aplicar según la antigüedad del auto
+            if (anioAuto <= 10)
+            {
+                return tasa.TasaA;
+            }
+            else if (anioAuto <= 12)
+            {
+                return tasa.TasaB;
+            }
+            else
+            {
+                return tasa.TasaC;
+            }
         }
     }
 }
