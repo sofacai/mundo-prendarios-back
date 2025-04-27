@@ -509,6 +509,31 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.ToTable("Usuarios");
                 });
 
+            modelBuilder.Entity("PlanTasa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Plazo")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Tasa")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlanId", "Plazo")
+                        .IsUnique();
+
+                    b.ToTable("PlanesTasas");
+                });
+
             modelBuilder.Entity("ReglaCotizacion", b =>
                 {
                     b.Property<int>("Id")
@@ -765,6 +790,17 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Navigation("Rol");
                 });
 
+            modelBuilder.Entity("PlanTasa", b =>
+                {
+                    b.HasOne("MundoPrendarios.Core.Entities.Plan", "Plan")
+                        .WithMany("Tasas")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("Subcanal", b =>
                 {
                     b.HasOne("MundoPrendarios.Core.Entities.Usuario", "AdminCanal")
@@ -801,6 +837,8 @@ namespace MundoPrendarios.Infrastructure.Migrations
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Plan", b =>
                 {
                     b.Navigation("PlanesCanales");
+
+                    b.Navigation("Tasas");
                 });
 
             modelBuilder.Entity("MundoPrendarios.Core.Entities.Usuario", b =>

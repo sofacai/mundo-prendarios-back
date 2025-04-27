@@ -24,6 +24,7 @@ namespace MundoPrendarios.Infrastructure.Data
         public DbSet<ReglaCotizacion> ReglasCotizacion { get; set; }
         public DbSet<ClienteVendors> ClienteVendors { get; set; }
         public DbSet<CanalOficialComercial> CanalOficialesComerciales { get; set; }
+        public DbSet<PlanTasa> PlanesTasas { get; set; }
 
 
 
@@ -116,7 +117,7 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasOne(o => o.Vendedor)
                 .WithMany(u => u.Operaciones)
                 .HasForeignKey(o => o.VendedorId)
-                .IsRequired(false)
+
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Operación - Subcanal
@@ -279,6 +280,20 @@ namespace MundoPrendarios.Infrastructure.Data
 
             modelBuilder.Entity<Operacion>()
                 .HasIndex(o => o.VendedorId);
+
+            modelBuilder.Entity<PlanTasa>()
+    .HasOne(pt => pt.Plan)
+    .WithMany(p => p.Tasas)
+    .HasForeignKey(pt => pt.PlanId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PlanTasa>()
+    .Property(pt => pt.Tasa)
+    .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<PlanTasa>()
+    .HasIndex(pt => new { pt.PlanId, pt.Plazo })
+    .IsUnique();
         }
     }
 }

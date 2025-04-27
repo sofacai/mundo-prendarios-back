@@ -65,23 +65,25 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Tasa = operacionDto.Tasa,
                 ClienteId = operacionDto.ClienteId,
                 PlanId = operacionDto.PlanId,
-                VendedorId = operacionDto.VendedorId ?? usuarioId ?? 0,
+                VendedorId = operacionDto.VendedorId, // Ya es nullable, no necesita conversion
                 SubcanalId = operacionDto.SubcanalId ?? 0,
                 CanalId = operacionDto.CanalId ?? cliente.CanalId,
                 FechaCreacion = DateTime.Now,
-                Estado = operacionDto.Estado,
-                UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId
+                Estado = operacionDto.Estado ?? "Propuesta",
+                UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId // Guardar el ID del usuario que crea
             };
 
-            // Si el usuario está logueado y es un vendor, asignar su subcanal si no viene especificado
-            if (usuarioId.HasValue && operacionDto.SubcanalId == null)
+            // Lógica para asignar subcanal si el usuario es vendor
+            if (usuarioId.HasValue && !operacion.VendedorId.HasValue)
             {
                 var usuario = await _usuarioRepository.GetByIdAsync(usuarioId.Value);
-                if (usuario != null && usuario.RolId == 3) // Rol Vendor
+                if (usuario != null && usuario.RolId == 3) // Si es vendor
                 {
+                    operacion.VendedorId = usuarioId.Value; // Auto-asignarse como vendedor
+
                     // Obtener el primer subcanal al que pertenece el vendor
                     var subcanalVendors = await _subcanalRepository.GetSubcanalesByVendorAsync(usuarioId.Value);
-                    if (subcanalVendors.Any())
+                    if (subcanalVendors.Any() && operacion.SubcanalId == 0)
                     {
                         operacion.SubcanalId = subcanalVendors.First().Id;
                         // También asignar el canal basándonos en el subcanal
@@ -92,10 +94,10 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             await _operacionRepository.AddAsync(operacion);
 
-            // Actualizar información del vendor
-            if (operacion.VendedorId > 0)
+            // Actualizar estadísticas del vendor solo si hay un vendedor asignado
+            if (operacion.VendedorId.HasValue)
             {
-                await ActualizarEstadisticasVendorAsync(operacion.VendedorId);
+                await ActualizarEstadisticasVendorAsync(operacion.VendedorId.Value);
             }
 
             // Cargar datos relacionados para el DTO
@@ -360,48 +362,14 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             // Asignar el ID del cliente recién creado a la operación
             operacionDto.ClienteId = cliente.Id;
 
-            // Crear la operación
-            var operacion = new Operacion
+            // Si no se especificó un UsuarioCreadorId, usar el usuario actual
+            if (!operacionDto.UsuarioCreadorId.HasValue)
             {
-                Monto = operacionDto.Monto,
-                Meses = operacionDto.Meses,
-                Tasa = operacionDto.Tasa,
-                ClienteId = cliente.Id,
-                PlanId = operacionDto.PlanId,
-                VendedorId = operacionDto.VendedorId ?? usuarioId ?? 0,
-                SubcanalId = operacionDto.SubcanalId ?? 0,
-                CanalId = operacionDto.CanalId ?? cliente.CanalId,
-                FechaCreacion = DateTime.Now
-            };
-
-            // Si el usuario está logueado y es un vendor, asignar su subcanal si no viene especificado
-            if (usuarioId.HasValue && operacionDto.SubcanalId == null)
-            {
-                var usuario = await _usuarioRepository.GetByIdAsync(usuarioId.Value);
-                if (usuario != null && usuario.RolId == 3) // Rol Vendor
-                {
-                    // Obtener el primer subcanal al que pertenece el vendor
-                    var subcanalVendors = await _subcanalRepository.GetSubcanalesByVendorAsync(usuarioId.Value);
-                    if (subcanalVendors.Any())
-                    {
-                        operacion.SubcanalId = subcanalVendors.First().Id;
-                        // También asignar el canal basándonos en el subcanal
-                        operacion.CanalId = subcanalVendors.First().CanalId;
-                    }
-                }
+                operacionDto.UsuarioCreadorId = usuarioId;
             }
 
-            await _operacionRepository.AddAsync(operacion);
-
-            // Actualizar información del vendor
-            if (operacion.VendedorId > 0)
-            {
-                await ActualizarEstadisticasVendorAsync(operacion.VendedorId);
-            }
-
-            // Cargar datos relacionados para el DTO
-            var operacionDetallada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
-            return _mapper.Map<OperacionDto>(operacionDetallada);
+            // Crear la operación usando el método existente
+            return await CrearOperacionAsync(operacionDto, usuarioId);
         }
 
         public async Task<OperacionDto> AprobarOperacionAsync(int operacionId, OperacionAprobarDto aprobarDto)

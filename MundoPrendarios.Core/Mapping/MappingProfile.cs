@@ -23,6 +23,8 @@ namespace MundoPrendarios.Core.Mapping
             CreateMap<Subcanal, SubcanalSimpleDto>();
             CreateMap<OperacionCrearDto, Operacion>();
             CreateMap<OperacionAprobarDto, Operacion>();
+            CreateMap<PlanTasa, PlanTasaDto>();
+            CreateMap<PlanTasaCrearDto, PlanTasa>();
 
             // Gasto mappings
             CreateMap<Gasto, GastoDto>();
@@ -44,12 +46,14 @@ namespace MundoPrendarios.Core.Mapping
 
             // Plan mappings
             CreateMap<Plan, PlanDto>()
-                .ForMember(dest => dest.CuotasAplicablesList, opt =>
-                    opt.MapFrom(src => ConvertStringToIntList(src.CuotasAplicables)))
-                .ForMember(dest => dest.FechaInicioStr, opt =>
-                    opt.MapFrom(src => src.FechaInicio.ToString("dd/MM/yyyy")))
-                .ForMember(dest => dest.FechaFinStr, opt =>
-                    opt.MapFrom(src => src.FechaFin.ToString("dd/MM/yyyy")));
+     .ForMember(dest => dest.CuotasAplicablesList, opt =>
+         opt.MapFrom(src => ConvertStringToIntList(src.CuotasAplicables)))
+     .ForMember(dest => dest.FechaInicioStr, opt =>
+         opt.MapFrom(src => src.FechaInicio.ToString("dd/MM/yyyy")))
+     .ForMember(dest => dest.FechaFinStr, opt =>
+         opt.MapFrom(src => src.FechaFin.ToString("dd/MM/yyyy")))
+     .ForMember(dest => dest.Tasas, opt =>
+         opt.Ignore());
 
             CreateMap<PlanCrearDto, Plan>()
                 .ForMember(dest => dest.CuotasAplicables, opt =>

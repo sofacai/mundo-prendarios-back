@@ -8,7 +8,7 @@
         public decimal Tasa { get; set; }
         public int ClienteId { get; set; }
         public int PlanId { get; set; }
-        public int VendedorId { get; set; } // Vendor asignado a la operación
+        public int? VendedorId { get; set; } // Vendor asignado a la operación
         public int SubcanalId { get; set; }
         public int CanalId { get; set; }
         public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;

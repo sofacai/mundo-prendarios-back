@@ -16,6 +16,8 @@
         public decimal GastoOtorgamiento { get; set; } // Cambio de MontoFijo a GastoOtorgamiento
         public string Banco { get; set; } // Nuevo campo
         public bool Activo { get; set; }
+        public List<PlanTasaDto> Tasas { get; set; } = new List<PlanTasaDto>();
+
 
     }
 
@@ -32,5 +34,7 @@
         public decimal Tasa { get; set; }
         public decimal GastoOtorgamiento { get; set; } // Cambio de MontoFijo a GastoOtorgamiento
         public string Banco { get; set; } // Nuevo campo
+        public List<PlanTasaCrearDto> Tasas { get; set; } = new List<PlanTasaCrearDto>();
+
     }
 }

@@ -18,5 +18,7 @@ namespace MundoPrendarios.Core.Entities
         public bool Activo { get; set; } = true;
         // Relación
         public List<PlanCanal> PlanesCanales { get; set; } = new List<PlanCanal>();
+        public List<PlanTasa> Tasas { get; set; } = new List<PlanTasa>();
+
     }
 }

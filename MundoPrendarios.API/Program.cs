@@ -104,6 +104,8 @@ builder.Services.AddScoped<IGastoRepository, GastoRepository>();
 builder.Services.AddScoped<IReglaCotizacionRepository, ReglaCotizacionRepository>();
 builder.Services.AddScoped<IClienteVendorRepository, ClienteVendorRepository>();
 builder.Services.AddScoped<ICanalOficialComercialRepository, CanalOficialComercialRepository>();
+builder.Services.AddScoped<IPlanTasaRepository, PlanTasaRepository>();
+builder.Services.AddScoped<IPlanTasaService, PlanTasaService>();
 
 
 

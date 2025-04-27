@@ -31,6 +31,7 @@ namespace MundoPrendarios.API.Controllers
         // Método auxiliar para verificar permisos y obtener canales permitidos
         private async Task<(bool tienePermiso, ActionResult respuestaError, List<int> canalesPermitidos)> VerificarPermiso()
         {
+            // All authenticated users can create operations now
             if (_currentUserService.IsAdmin())
                 return (true, null, null); // Admin puede ver todo
 
@@ -53,6 +54,13 @@ namespace MundoPrendarios.API.Controllers
                 {
                     return (false, StatusCode(403, new { mensaje = "No tienes canales asignados." }), null);
                 }
+            }
+
+            // If it's an authenticated user with a role we don't explicitly check for,
+            // still allow them to create operations
+            if (User.Identity.IsAuthenticated)
+            {
+                return (true, null, null);
             }
 
             return (false, StatusCode(403, new { mensaje = "No tienes permisos para acceder a las operaciones." }), null);
@@ -130,7 +138,10 @@ namespace MundoPrendarios.API.Controllers
         {
             try
             {
-                // Verificaciones de permisos...
+                // Verificar permisos generales - Ahora todos los usuarios autenticados pueden crear operaciones
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
 
                 // Verificar que si se proporciona un UsuarioCreadorId, el usuario actual tenga permiso para hacerlo
                 if (operacionDto.UsuarioCreadorId.HasValue && operacionDto.UsuarioCreadorId != _currentUserService.GetUserId())
@@ -142,7 +153,21 @@ namespace MundoPrendarios.API.Controllers
                     }
                 }
 
+                // Si no se proporciona un VendedorId, y el usuario actual es un Vendor, auto-asignarse
+                if (!operacionDto.VendedorId.HasValue && _currentUserService.IsVendor())
+                {
+                    operacionDto.VendedorId = _currentUserService.GetUserId();
+                }
+
+                // Siempre guardar quién crea la operación
                 int usuarioId = _currentUserService.GetUserId();
+
+                // Si no se especificó un UsuarioCreadorId, usar el usuario actual
+                if (!operacionDto.UsuarioCreadorId.HasValue)
+                {
+                    operacionDto.UsuarioCreadorId = usuarioId;
+                }
+
                 var createdOperacion = await _operacionService.CrearOperacionAsync(operacionDto, usuarioId);
                 return CreatedAtAction("GetOperacion", new { id = createdOperacion.Id }, createdOperacion);
             }
@@ -164,6 +189,9 @@ namespace MundoPrendarios.API.Controllers
                 {
                     usuarioId = _currentUserService.GetUserId();
 
+                    // Si el usuario está autenticado, guardar el ID del creador
+                    modelo.Operacion.UsuarioCreadorId = usuarioId;
+
                     // Si es OficialComercial autenticado y se especificó un canal, verificar permisos
                     if (_currentUserService.IsOficialComercial() && modelo.Operacion.CanalId.HasValue)
                     {
@@ -174,6 +202,12 @@ namespace MundoPrendarios.API.Controllers
                         {
                             return StatusCode(403, new { mensaje = "No tienes permiso para crear operaciones en este canal." });
                         }
+                    }
+
+                    // Si el usuario es vendor y no se proporcionó VendedorId, auto-asignarse
+                    if (_currentUserService.IsVendor() && !modelo.Operacion.VendedorId.HasValue)
+                    {
+                        modelo.Operacion.VendedorId = usuarioId;
                     }
                 }
 
