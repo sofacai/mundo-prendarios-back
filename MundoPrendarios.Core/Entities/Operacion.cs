@@ -40,5 +40,15 @@
         public Usuario UsuarioCreador { get; set; }
         public Subcanal Subcanal { get; set; }
         public Canal Canal { get; set; }
+
+        public decimal? CuotaInicial { get; set; }
+        public decimal? CuotaInicialAprobada { get; set; }
+        public decimal? CuotaPromedio { get; set; }
+        public decimal? CuotaPromedioAprobada { get; set; }
+
+        public string AutoInicial { get; set; }
+        public string AutoAprobado { get; set; }
+        public string UrlAprobadoDefinitivo { get; set; }
+        public string Observaciones { get; set; }
     }
 }

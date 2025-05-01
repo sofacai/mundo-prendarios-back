@@ -127,6 +127,22 @@ namespace MundoPrendarios.Infrastructure.Data
                 .HasForeignKey(o => o.SubcanalId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Operacion>()
+    .Property(o => o.CuotaInicial)
+    .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Operacion>()
+                .Property(o => o.CuotaInicialAprobada)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Operacion>()
+                .Property(o => o.CuotaPromedio)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Operacion>()
+                .Property(o => o.CuotaPromedioAprobada)
+                .HasColumnType("decimal(18,2)");
+
             // Configuración para el campo Comision
             modelBuilder.Entity<Subcanal>()
                 .Property(s => s.Comision)

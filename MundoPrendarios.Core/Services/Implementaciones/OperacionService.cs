@@ -70,7 +70,11 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 CanalId = operacionDto.CanalId ?? cliente.CanalId,
                 FechaCreacion = DateTime.Now,
                 Estado = operacionDto.Estado ?? "Propuesta",
-                UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId // Guardar el ID del usuario que crea
+                UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId, // Guardar el ID del usuario que crea
+                    CuotaInicial = operacionDto.CuotaInicial,
+                CuotaPromedio = operacionDto.CuotaPromedio,
+                AutoInicial = operacionDto.AutoInicial,
+                Observaciones = operacionDto.Observaciones
             };
 
             // Lógica para asignar subcanal si el usuario es vendor
@@ -387,6 +391,10 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             operacion.PlanAprobadoId = aprobarDto.PlanAprobadoId;
             operacion.FechaAprobacion = DateTime.Now;
             operacion.Estado = "Aprobada";
+            operacion.CuotaInicialAprobada = aprobarDto.CuotaInicialAprobada;
+            operacion.CuotaPromedioAprobada = aprobarDto.CuotaPromedioAprobada;
+            operacion.AutoAprobado = aprobarDto.AutoAprobado;
+            operacion.UrlAprobadoDefinitivo = aprobarDto.UrlAprobadoDefinitivo;
 
             await _operacionRepository.UpdateAsync(operacion);
 
