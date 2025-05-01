@@ -34,6 +34,22 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
+        // GET: api/PlanTasa/plan/5/activas
+        [HttpGet("plan/{planId}/activas")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<PlanTasaDto>>> GetTasasActivasByPlanId(int planId)
+        {
+            try
+            {
+                var tasas = await _planTasaService.ObtenerTasasActivasPorPlanIdAsync(planId);
+                return Ok(tasas);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
         // GET: api/PlanTasa/plan/5/plazo/12
         [HttpGet("plan/{planId}/plazo/{plazo}")]
         [Authorize]
@@ -64,6 +80,13 @@ namespace MundoPrendarios.API.Controllers
                 if (!_currentUserService.IsAdmin())
                 {
                     return StatusCode(403, new { mensaje = "Solo los administradores pueden crear tasas." });
+                }
+
+                // Validar que el plazo sea válido (12, 18, 24, 30, 36, 48, 60)
+                var plazosValidos = new[] { 12, 18, 24, 30, 36, 48, 60 };
+                if (!plazosValidos.Contains(tasaDto.Plazo))
+                {
+                    return BadRequest(new { mensaje = $"El plazo {tasaDto.Plazo} no es válido. Los plazos permitidos son: 12, 18, 24, 30, 36, 48 y 60 meses." });
                 }
 
                 var createdTasa = await _planTasaService.CrearTasaAsync(planId, tasaDto);
@@ -99,6 +122,13 @@ namespace MundoPrendarios.API.Controllers
                     return StatusCode(403, new { mensaje = "Solo los administradores pueden actualizar tasas." });
                 }
 
+                // Validar que el plazo sea válido (12, 18, 24, 30, 36, 48, 60)
+                var plazosValidos = new[] { 12, 18, 24, 30, 36, 48, 60 };
+                if (!plazosValidos.Contains(tasaDto.Plazo))
+                {
+                    return BadRequest(new { mensaje = $"El plazo {tasaDto.Plazo} no es válido. Los plazos permitidos son: 12, 18, 24, 30, 36, 48 y 60 meses." });
+                }
+
                 // Añadir log para debug
                 Console.WriteLine($"Actualizando tasa ID: {id}, Plazo: {tasaDto.Plazo}");
 
@@ -118,6 +148,56 @@ namespace MundoPrendarios.API.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // PATCH: api/PlanTasa/5/activar
+        [HttpPatch("{id}/activar")]
+        [Authorize]
+        public async Task<IActionResult> ActivateTasa(int id)
+        {
+            try
+            {
+                if (!_currentUserService.IsAdmin())
+                {
+                    return StatusCode(403, new { mensaje = "Solo los administradores pueden activar tasas." });
+                }
+
+                await _planTasaService.ActivarDesactivarTasaAsync(id, true);
+                return Ok(new { mensaje = "Tasa activada correctamente." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // PATCH: api/PlanTasa/5/desactivar
+        [HttpPatch("{id}/desactivar")]
+        [Authorize]
+        public async Task<IActionResult> DeactivateTasa(int id)
+        {
+            try
+            {
+                if (!_currentUserService.IsAdmin())
+                {
+                    return StatusCode(403, new { mensaje = "Solo los administradores pueden desactivar tasas." });
+                }
+
+                await _planTasaService.ActivarDesactivarTasaAsync(id, false);
+                return Ok(new { mensaje = "Tasa desactivada correctamente." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
             }
             catch (Exception ex)
             {
@@ -150,13 +230,12 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
-
         [HttpGet("cotizar")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<object>>> CotizarTasa(
-    [FromQuery] decimal monto,
-    [FromQuery] int cuotas,
-    [FromQuery] int antiguedad)
+            [FromQuery] decimal monto,
+            [FromQuery] int cuotas,
+            [FromQuery] int antiguedad)
         {
             try
             {

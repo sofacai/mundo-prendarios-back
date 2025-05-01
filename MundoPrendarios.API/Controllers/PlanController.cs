@@ -131,17 +131,17 @@ namespace MundoPrendarios.API.Controllers
                     return StatusCode(403, new { mensaje = "Solo los administradores pueden crear planes." });
                 }
 
-                // Validar que las cuotas aplicables contengan solo valores permitidos (12, 24, 36, 48, 60)
+                // Validar que las cuotas aplicables contengan solo valores permitidos (12, 18, 24, 30, 36, 48, 60)
                 if (planDto.CuotasAplicables != null)
                 {
-                    var valoresPermitidos = new[] { 12, 24, 36, 48, 60 };
+                    var valoresPermitidos = new[] { 12, 18, 24, 30, 36, 48, 60 };
                     var valoresNoPermitidos = planDto.CuotasAplicables
                         .Where(c => !valoresPermitidos.Contains(c))
                         .ToList();
 
                     if (valoresNoPermitidos.Any())
                     {
-                        return BadRequest(new { mensaje = $"Los valores de cuotas {string.Join(", ", valoresNoPermitidos)} no son válidos. Solo se permiten 12, 24, 36, 48 y 60 meses." });
+                        return BadRequest(new { mensaje = $"Los valores de cuotas {string.Join(", ", valoresNoPermitidos)} no son válidos. Solo se permiten 12, 18, 24, 30, 36, 48 y 60 meses." });
                     }
                 }
 
@@ -166,17 +166,17 @@ namespace MundoPrendarios.API.Controllers
                     return StatusCode(403, new { mensaje = "Solo los administradores pueden actualizar planes." });
                 }
 
-                // Validar que las cuotas aplicables contengan solo valores permitidos (12, 24, 36, 48, 60)
+                // Validar que las cuotas aplicables contengan solo valores permitidos (12, 18, 24, 30, 36, 48, 60)
                 if (planDto.CuotasAplicables != null)
                 {
-                    var valoresPermitidos = new[] { 12, 24, 36, 48, 60 };
+                    var valoresPermitidos = new[] { 12, 18, 24, 30, 36, 48, 60 };
                     var valoresNoPermitidos = planDto.CuotasAplicables
                         .Where(c => !valoresPermitidos.Contains(c))
                         .ToList();
 
                     if (valoresNoPermitidos.Any())
                     {
-                        return BadRequest(new { mensaje = $"Los valores de cuotas {string.Join(", ", valoresNoPermitidos)} no son válidos. Solo se permiten 12, 24, 36, 48 y 60 meses." });
+                        return BadRequest(new { mensaje = $"Los valores de cuotas {string.Join(", ", valoresNoPermitidos)} no son válidos. Solo se permiten 12, 18, 24, 30, 36, 48 y 60 meses." });
                     }
                 }
 

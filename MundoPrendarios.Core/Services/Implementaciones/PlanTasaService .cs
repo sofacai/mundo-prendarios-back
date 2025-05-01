@@ -28,6 +28,12 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             return _mapper.Map<List<PlanTasa>, List<PlanTasaDto>>(tasas.ToList());
         }
 
+        public async Task<List<PlanTasaDto>> ObtenerTasasActivasPorPlanIdAsync(int planId)
+        {
+            var tasas = await _planTasaRepository.GetTasasActivasByPlanIdAsync(planId);
+            return _mapper.Map<List<PlanTasa>, List<PlanTasaDto>>(tasas.ToList());
+        }
+
         public async Task<PlanTasaDto> ObtenerTasaPorPlanIdYPlazoAsync(int planId, int plazo)
         {
             var tasa = await _planTasaRepository.GetTasaByPlanIdAndPlazoAsync(planId, plazo);
@@ -54,11 +60,11 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 throw new InvalidOperationException($"Ya existe una tasa para el plazo de {tasaDto.Plazo} meses en este plan");
             }
 
-            // Verificar que el plazo sea válido (12, 18, 24, 36, 48, 60)
-            var plazosValidos = new[] { 12, 18, 24, 36, 48, 60 };
+            // Verificar que el plazo sea válido (12, 18, 24, 30, 36, 48, 60)
+            var plazosValidos = new[] { 12, 18, 24, 30, 36, 48, 60 };
             if (!plazosValidos.Contains(tasaDto.Plazo))
             {
-                throw new ArgumentException($"El plazo {tasaDto.Plazo} no es válido. Los plazos permitidos son: 12, 18, 24, 36, 48 y 60 meses.");
+                throw new ArgumentException($"El plazo {tasaDto.Plazo} no es válido. Los plazos permitidos son: 12, 18, 24, 30, 36, 48 y 60 meses.");
             }
 
             var tasa = new PlanTasa
@@ -67,7 +73,8 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Plazo = tasaDto.Plazo,
                 TasaA = tasaDto.TasaA,
                 TasaB = tasaDto.TasaB,
-                TasaC = tasaDto.TasaC
+                TasaC = tasaDto.TasaC,
+                Activo = tasaDto.Activo
             };
 
             await _planTasaRepository.AddAsync(tasa);
@@ -82,11 +89,11 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 throw new KeyNotFoundException($"No se encontró la tasa con ID {tasaId}");
             }
 
-            // Verificar que el plazo sea válido (12, 18, 24, 36, 48, 60)
-            var plazosValidos = new[] { 12, 18, 24, 36, 48, 60 };
+            // Verificar que el plazo sea válido (12, 18, 24, 30, 36, 48, 60)
+            var plazosValidos = new[] { 12, 18, 24, 30, 36, 48, 60 };
             if (!plazosValidos.Contains(tasaDto.Plazo))
             {
-                throw new ArgumentException($"El plazo {tasaDto.Plazo} no es válido. Los plazos permitidos son: 12, 18, 24, 36, 48 y 60 meses.");
+                throw new ArgumentException($"El plazo {tasaDto.Plazo} no es válido. Los plazos permitidos son: 12, 18, 24, 30, 36, 48 y 60 meses.");
             }
 
             // Verificar si el plazo ha cambiado
@@ -110,11 +117,22 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             tasa.TasaA = tasaDto.TasaA;
             tasa.TasaB = tasaDto.TasaB;
             tasa.TasaC = tasaDto.TasaC;
+            tasa.Activo = tasaDto.Activo;
 
             await _planTasaRepository.UpdateAsync(tasa);
         }
 
+        public async Task ActivarDesactivarTasaAsync(int tasaId, bool activar)
+        {
+            var tasa = await _planTasaRepository.GetByIdAsync(tasaId);
+            if (tasa == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la tasa con ID {tasaId}");
+            }
 
+            tasa.Activo = activar;
+            await _planTasaRepository.UpdateAsync(tasa);
+        }
 
         public async Task EliminarTasaAsync(int tasaId)
         {
@@ -135,7 +153,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             foreach (var plan in planes)
             {
                 var tasa = await _planTasaRepository.GetTasaByPlanIdAndPlazoAsync(plan.Id, cuotas);
-                if (tasa != null)
+                if (tasa != null && tasa.Activo) // Solo incluir tasas activas
                 {
                     resultado.Add(_mapper.Map<PlanTasa, PlanTasaDto>(tasa));
                 }
@@ -150,6 +168,11 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             if (tasa == null)
             {
                 throw new KeyNotFoundException($"No se encontró una tasa para el plan ID {planId} con plazo {plazo} meses");
+            }
+
+            if (!tasa.Activo)
+            {
+                throw new InvalidOperationException($"La tasa para el plazo de {plazo} meses está inactiva");
             }
 
             // Determinar qué tasa aplicar según la antigüedad del auto

@@ -6,6 +6,7 @@
     public decimal TasaA { get; set; }
     public decimal TasaB { get; set; }
     public decimal TasaC { get; set; }
+    public bool Activo { get; set; }
 }
 
 public class PlanTasaCrearDto
@@ -14,4 +15,5 @@ public class PlanTasaCrearDto
     public decimal TasaA { get; set; }
     public decimal TasaB { get; set; }
     public decimal TasaC { get; set; }
+    public bool Activo { get; set; } = true;
 }
