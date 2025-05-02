@@ -52,7 +52,6 @@ namespace MundoPrendarios.API.Controllers
 
         // GET: api/PlanTasa/plan/5/plazo/12
         [HttpGet("plan/{planId}/plazo/{plazo}")]
-        [Authorize]
         public async Task<ActionResult<PlanTasaDto>> GetTasaByPlanIdAndPlazo(int planId, int plazo)
         {
             try
