@@ -24,12 +24,13 @@ namespace MundoPrendarios.Core.Entities
         public string Auto { get; set; }
         public int? CodigoPostal { get; set; }
         public DateTime? FechaNacimiento { get; set; }
-
+        public string DniConyuge { get; set; }
 
         // Relaciones
         public Canal Canal { get; set; }
         public Usuario UsuarioCreador { get; set; }
         public List<Operacion> Operaciones { get; set; } = new List<Operacion>();
         public List<ClienteVendors> ClienteVendors { get; set; } = new List<ClienteVendors>();
+
     }
 }

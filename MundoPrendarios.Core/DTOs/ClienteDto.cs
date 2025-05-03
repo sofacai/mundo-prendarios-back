@@ -17,7 +17,7 @@
         public string Auto { get; set; }
         public int? CodigoPostal { get; set; }
         public DateTime? FechaNacimiento { get; set; }
-
+        public string DniConyuge { get; set; }
         public string EstadoCivil { get; set; }
 
 

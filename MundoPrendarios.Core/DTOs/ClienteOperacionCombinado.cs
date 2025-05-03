@@ -16,6 +16,7 @@ namespace MundoPrendarios.Core.DTOs
         public string Sexo { get; set; }
         public string EstadoCivil { get; set; }
         public int? CanalId { get; set; }
+        public string DniConyuge { get; set; }
     }
 
     // Para el wizard
@@ -31,7 +32,7 @@ namespace MundoPrendarios.Core.DTOs
         public string Sexo { get; set; }
         public string EstadoCivil { get; set; }
         public bool AutoasignarVendor { get; set; } = true;  // Añadir esta línea
-
+        public string DniConyuge { get; set; }
     }
 
     // DTO combinado para el wizard

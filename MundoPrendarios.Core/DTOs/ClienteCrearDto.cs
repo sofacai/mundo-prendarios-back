@@ -28,7 +28,7 @@ namespace MundoPrendarios.Core.DTOs
         public string Sexo { get; set; } = "";
         public string EstadoCivil { get; set; } = "";
         public bool AutoasignarVendor { get; set; } = true;
-
+        public string DniConyuge { get; set; }
         public int? Ingresos { get; set; }
         public string Auto { get; set; }
         public int? CodigoPostal { get; set; }
