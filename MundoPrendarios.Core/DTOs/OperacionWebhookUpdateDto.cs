@@ -8,5 +8,10 @@
         public int? MesesAprobados { get; set; }
         public string? PlanAprobadoNombre { get; set; }
         public string? EstadoDesdeEtiqueta { get; set; }
+
+        public decimal? CuotaInicialAprobada { get; set; }
+        public decimal? CuotaPromedioAprobada { get; set; }
+        public string? AutoAprobado { get; set; }
+        public string? Observaciones { get; set; }
     }
 }

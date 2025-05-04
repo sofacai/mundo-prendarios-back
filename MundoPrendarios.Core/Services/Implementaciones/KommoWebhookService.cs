@@ -110,38 +110,53 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         }
                     }
 
-                    // CuotaInicial: field_id 973556
+                    // CuotaInicialAprobada: field_id 973556 (antes CuotaInicial)
                     else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "973556")
                     {
                         string valueKey = key.Replace("[id]", "[values][0][value]");
                         if (form.ContainsKey(valueKey))
                         {
                             var value = form[valueKey].ToString();
-                            var cuotaInicial = ParseDecimal(value);
-                            operacion.CuotaInicial = cuotaInicial;
+                            var cuotaInicialAprobada = ParseDecimal(value);
+                            operacion.CuotaInicialAprobada = cuotaInicialAprobada;
+                            updateDto.CuotaInicialAprobada = cuotaInicialAprobada;
                         }
                     }
 
-                    // CuotaPromedio: field_id 973558
+                    // CuotaPromedioAprobada: field_id 973558 (antes CuotaPromedio)
                     else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "973558")
                     {
                         string valueKey = key.Replace("[id]", "[values][0][value]");
                         if (form.ContainsKey(valueKey))
                         {
                             var value = form[valueKey].ToString();
-                            var cuotaPromedio = ParseDecimal(value);
-                            operacion.CuotaPromedio = cuotaPromedio;
+                            var cuotaPromedioAprobada = ParseDecimal(value);
+                            operacion.CuotaPromedioAprobada = cuotaPromedioAprobada;
+                            updateDto.CuotaPromedioAprobada = cuotaPromedioAprobada;
                         }
                     }
 
-                    // Observaciones: field_id 969894
+                    // AutoAprobado: field_id 969894 (antes Observaciones)
                     else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "969894")
                     {
                         string valueKey = key.Replace("[id]", "[values][0][value]");
                         if (form.ContainsKey(valueKey))
                         {
                             var value = form[valueKey].ToString();
+                            operacion.AutoAprobado = value;
+                            updateDto.AutoAprobado = value;
+                        }
+                    }
+
+                    // Observaciones: field_id 973756 (nuevo campo para Observaciones)
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "973756")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
                             operacion.Observaciones = value;
+                            updateDto.Observaciones = value;
                         }
                     }
 
