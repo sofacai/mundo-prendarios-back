@@ -54,10 +54,10 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                     OperacionId = operacionId
                 };
 
-                // Extraer campos usando valores específicos (actualizado)
+                // Extraer campos usando valores específicos (actualizado con todos los campos)
                 foreach (var key in form.Keys)
                 {
-                    // MontoAprobado: field_id 964766
+                    // MontoAprobado: field_id 964766 (Prestamo Final)
                     if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964766")
                     {
                         string valueKey = key.Replace("[id]", "[values][0][value]");
@@ -70,7 +70,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         }
                     }
 
-                    // TasaAprobada: field_id 964768
+                    // TasaAprobada: field_id 964768 (TNA Final)
                     else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964768")
                     {
                         string valueKey = key.Replace("[id]", "[values][0][value]");
@@ -83,7 +83,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         }
                     }
 
-                    // TipoPrestamoAprobado: field_id 964770
+                    // PlanAprobadoNombre: field_id 964770 (Tipo Prestamo Final)
                     else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964770")
                     {
                         string valueKey = key.Replace("[id]", "[values][0][value]");
@@ -95,7 +95,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         }
                     }
 
-                    // MesesAprobados: field_id 964772
+                    // MesesAprobados: field_id 964772 (Plazo Final)
                     else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964772")
                     {
                         string valueKey = key.Replace("[id]", "[values][0][value]");
@@ -109,11 +109,57 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                             }
                         }
                     }
+
+                    // CuotaInicial: field_id 973556
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "973556")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
+                            var cuotaInicial = ParseDecimal(value);
+                            operacion.CuotaInicial = cuotaInicial;
+                        }
+                    }
+
+                    // CuotaPromedio: field_id 973558
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "973558")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
+                            var cuotaPromedio = ParseDecimal(value);
+                            operacion.CuotaPromedio = cuotaPromedio;
+                        }
+                    }
+
+                    // Observaciones: field_id 969894
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "969894")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
+                            operacion.Observaciones = value;
+                        }
+                    }
+
+                    // UrlAprobadoDefinitivo: field_id 973560
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "973560")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
+                            operacion.UrlAprobadoDefinitivo = value;
+                        }
+                    }
                 }
 
                 // Procesar tags para determinar estado
                 List<string> tags = new List<string>();
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 15; i++)  // Aumentamos el rango para capturar más etiquetas potenciales
                 {
                     string tagKey = $"leads[update][0][tags][{i}][name]";
                     if (form.ContainsKey(tagKey))
@@ -168,29 +214,32 @@ namespace MundoPrendarios.Core.Services.Implementaciones
         {
             // Si no hay tags o hay tags ignorados (Demorado/Duplicado)
             if (tags == null || !tags.Any() || tags.Contains("Demorado") || tags.Contains("Duplicado"))
-                return "EN ANALISIS";
+                return "EN GESTION";
 
-            // Si hay más de un tag (excepto los ignorados), usar EN ANALISIS
+            // Si hay más de un tag (excepto los ignorados), usar EN GESTION
             if (tags.Count > 1)
-                return "EN ANALISIS";
+                return "EN GESTION";
 
             // Mapeo de tags a estados
             var mapeo = new Dictionary<string, string>
-            {
-                { "Aprobado definitivo", "APROBADO DEFINIT" },
-                { "Pasa a análisis", "EN ANALISIS" },
-                { "Aprobado Provisorio", "EN ANALISIS" },
-                { "Completar documentación", "COMPLETANDO DOCU" },
-                { "Firmar documentación", "FIRMAS DOCU" },
-                { "Incripción de prenda propio", "LIQUIDADA" },
-                { "Incripción prenda canal", "LIQUIDADA" },
-                { "Envío a liquidar", "LIQUIDADA" },
-                { "Rechazado BCRA", "RECHAZADO" },
-                { "Rechazado Banco", "RECHAZADO" },
-            };
+    {
+        { "Enviar a Banco", "ENVIADA" },
+        { "Aprobado definitivo", "APROBADO DEF" },
+        { "Pasa a análisis", "EN GESTION" },
+        { "Aprobado Provisorio", "EN GESTION" },
+        { "Completar documentación", "EN GESTION" },
+        { "Firmar documentación", "FIRMAR DOCUM" },
+        { "Inscripción de prenda propio", "EN PROC.INSC." },
+        { "Inscripción prenda canal", "EN PROC.INSC." },
+        { "Envío a liquidar", "EN PROC.LIQ." },
+        { "Rechazado BCRA", "RECHAZADO" },
+        { "Rechazado Banco", "RECHAZADO" },
+        { "Buqueado", "LIQUIDADA" },
+        { "Liquidado Canal", "LIQUIDADA" }
+    };
 
             // Usar el mapeo para un solo tag
-            return mapeo.TryGetValue(tags[0], out var estado) ? estado : "EN ANALISIS";
+            return mapeo.TryGetValue(tags[0], out var estado) ? estado : "EN GESTION";
         }
     }
 }

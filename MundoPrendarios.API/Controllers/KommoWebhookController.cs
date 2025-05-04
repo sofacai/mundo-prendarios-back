@@ -27,5 +27,11 @@ namespace MundoPrendarios.Controllers
             var result = await _webhookService.ProcesarDesdeFormAsync(form);
             return Ok(result);
         }
+
+        [HttpGet]
+        public IActionResult VerificarWebhook()
+        {
+            return Ok("Webhook Kommo OK");
+        }
     }
 }
