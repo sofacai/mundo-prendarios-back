@@ -240,7 +240,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
     {
         { "Enviar a Banco", "ENVIADA" },
         { "Aprobado definitivo", "APROBADO DEF" },
-        { "Pasa a análisis", "EN GESTION" },
+        { "Pasa a análisis", "ANALISIS DE BCO" },
         { "Aprobado Provisorio", "EN GESTION" },
         { "Completar documentación", "EN GESTION" },
         { "Firmar documentación", "FIRMAR DOCUM" },
