@@ -10,6 +10,7 @@ namespace MundoPrendarios.Infrastructure.Repositories
         {
         }
 
+
         public async Task<IReadOnlyList<PlanCanal>> GetPlanCanalByPlanAsync(int planId)
         {
             return await _dbContext.PlanesCanales

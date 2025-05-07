@@ -656,5 +656,70 @@ namespace MundoPrendarios.API.Controllers
                 return StatusCode(500, new { mensaje = ex.Message });
             }
         }
+
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<ActionResult> DeleteOperacion(int id)
+        {
+            try
+            {
+                // Obtener la operación para verificar permisos
+                var operacion = await _operacionService.ObtenerOperacionPorIdAsync(id);
+                if (operacion == null)
+                {
+                    return NotFound(new { mensaje = "No se encontró la operación especificada." });
+                }
+
+                // Verificar permisos según rol
+                if (_currentUserService.IsAdmin())
+                {
+                    // Solo los administradores pueden eliminar cualquier operación
+                    var resultado = await _operacionService.EliminarOperacionAsync(id);
+                    return Ok(new { mensaje = "Operación eliminada correctamente." });
+                }
+                else if (_currentUserService.IsOficialComercial())
+                {
+                    // Verificar si la operación pertenece a un canal asignado al OC
+                    int usuarioId = _currentUserService.GetUserId();
+                    var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                    if (canalesIds.Contains(operacion.CanalId.Value))
+                    {
+                        var resultado = await _operacionService.EliminarOperacionAsync(id);
+                        return Ok(new { mensaje = "Operación eliminada correctamente." });
+                    }
+
+                    return Forbid();
+                }
+                else if (_currentUserService.IsAdminCanal())
+                {
+                    // Verificar si la operación pertenece a un subcanal que administra
+                    int usuarioId = _currentUserService.GetUserId();
+                    var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+                    var subcanalIds = subcanales.Select(s => s.Id).ToList();
+
+                    if (operacion.SubcanalId.HasValue && subcanalIds.Contains(operacion.SubcanalId.Value))
+                    {
+                        var resultado = await _operacionService.EliminarOperacionAsync(id);
+                        return Ok(new { mensaje = "Operación eliminada correctamente." });
+                    }
+
+                    return Forbid();
+                }
+                // Los Vendors no deberían poder eliminar operaciones
+
+                return Forbid();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
     }
 }

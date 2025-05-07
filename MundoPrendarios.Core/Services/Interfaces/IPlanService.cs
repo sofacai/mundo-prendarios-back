@@ -11,6 +11,9 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task<IReadOnlyList<PlanDto>> ObtenerPlanesActivosAsync();
         Task<IReadOnlyList<PlanDto>> ObtenerPlanesPorRangoAsync(decimal monto, int cuotas);
         Task ActivarDesactivarPlanAsync(int planId, bool activar);
+        Task EliminarPlanAsync(int planId);
+        Task<IEnumerable<int>> ObtenerCanalesPorPlanIdAsync(int planId);
+
         Task ActualizarPlanAsync(int id, PlanCrearDto planDto);
     }
 }

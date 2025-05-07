@@ -56,18 +56,18 @@ namespace MundoPrendarios.Core.Mapping
          opt.Ignore());
 
             CreateMap<PlanCrearDto, Plan>()
-                .ForMember(dest => dest.CuotasAplicables, opt =>
-                    opt.MapFrom(src => src.CuotasAplicables != null
-                        ? string.Join(",", src.CuotasAplicables)
-                        : ""))
-                .ForMember(dest => dest.FechaInicio, opt =>
-                    opt.MapFrom(src => !string.IsNullOrEmpty(src.FechaInicioStr)
-                        ? DateTime.ParseExact(src.FechaInicioStr, "dd/MM/yyyy", null)
-                        : src.FechaInicio))
-                .ForMember(dest => dest.FechaFin, opt =>
-                    opt.MapFrom(src => !string.IsNullOrEmpty(src.FechaFinStr)
-                        ? DateTime.ParseExact(src.FechaFinStr, "dd/MM/yyyy", null)
-                        : src.FechaFin));
+     .ForMember(dest => dest.CuotasAplicables, opt =>
+         opt.MapFrom(src => src.CuotasAplicables != null
+             ? string.Join(",", src.CuotasAplicables)
+             : ""))
+     .ForMember(dest => dest.FechaInicio, opt =>
+         opt.MapFrom(src => !string.IsNullOrEmpty(src.FechaInicioStr)
+             ? DateTime.ParseExact(src.FechaInicioStr, "dd/MM/yyyy", null)
+             : src.FechaInicio))
+     .ForMember(dest => dest.FechaFin, opt =>
+         opt.MapFrom(src => !string.IsNullOrEmpty(src.FechaFinStr)
+             ? DateTime.ParseExact(src.FechaFinStr, "dd/MM/yyyy", null)
+             : src.FechaFin));
 
 
             // Canal mappings

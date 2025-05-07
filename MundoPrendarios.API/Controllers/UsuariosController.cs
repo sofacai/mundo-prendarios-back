@@ -1064,5 +1064,131 @@ namespace MundoPrendarios.API.Controllers
                 return StatusCode(500, new { mensaje = ex.Message });
             }
         }
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,AdminCanal,OficialComercial")]
+        public async Task<ActionResult> DeleteUsuario(int id)
+        {
+            try
+            {
+                // Verificar permisos según el rol
+                var rolUsuarioActual = _currentUserService.GetUserRole();
+                var idUsuarioActual = _currentUserService.GetUserId();
+
+                // Obtener el usuario a eliminar para verificar
+                var usuario = await _usuarioService.ObtenerUsuarioPorIdAsync(id);
+
+                // Admin puede eliminar a cualquier usuario excepto a si mismo
+                if (rolUsuarioActual == "Admin")
+                {
+                    if (idUsuarioActual == id)
+                    {
+                        return StatusCode(403, new
+                        {
+                            message = "No puedes eliminar tu propia cuenta de administrador"
+                        });
+                    }
+
+                    await _usuarioService.EliminarUsuarioAsync(id);
+                    return Ok(new { message = "Usuario eliminado correctamente" });
+                }
+                // OficialComercial solo puede eliminar vendors de sus canales asignados
+                else if (rolUsuarioActual == "OficialComercial")
+                {
+                    // Verificar que sea un vendor (RolId = 3)
+                    if (usuario.RolId != 3)
+                    {
+                        return StatusCode(403, new
+                        {
+                            message = "Acceso denegado",
+                            details = "Solo puedes eliminar usuarios con rol Vendor"
+                        });
+                    }
+
+                    // Obtener los canales asignados al OC
+                    var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(idUsuarioActual);
+                    var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                    // Obtener todos los subcanales de estos canales
+                    var todosSubcanales = await _subcanalService.ObtenerTodosSubcanalesAsync();
+                    var subcanalesDeCanalesAsignados = todosSubcanales
+                        .Where(s => canalesIds.Contains(s.CanalId))
+                        .ToList();
+
+                    // Verificar si el vendor pertenece a alguno de estos subcanales
+                    bool esVendorDeSubcanalPermitido = false;
+                    foreach (var subcanal in subcanalesDeCanalesAsignados)
+                    {
+                        bool esVendorDelSubcanal = await _usuarioService.VerificarVendorEnSubcanalAsync(id, subcanal.Id);
+                        if (esVendorDelSubcanal)
+                        {
+                            esVendorDeSubcanalPermitido = true;
+                            break;
+                        }
+                    }
+
+                    if (!esVendorDeSubcanalPermitido)
+                    {
+                        return StatusCode(403, new
+                        {
+                            message = "Acceso denegado",
+                            details = "No puedes eliminar a este usuario porque no pertenece a ningún subcanal de tus canales asignados"
+                        });
+                    }
+
+                    await _usuarioService.EliminarUsuarioAsync(id);
+                    return Ok(new { message = "Usuario eliminado correctamente" });
+                }
+                // AdminCanal solo puede eliminar vendors de su subcanal
+                else if (rolUsuarioActual == "AdminCanal")
+                {
+                    // Verificar que sea un vendor (RolId = 3)
+                    if (usuario.RolId != 3)
+                    {
+                        return StatusCode(403, new
+                        {
+                            message = "Acceso denegado",
+                            details = "Solo puedes eliminar usuarios con rol Vendor"
+                        });
+                    }
+
+                    int subcanalAdmin = await _usuarioService.ObtenerSubcanalAdminAsync(idUsuarioActual);
+                    if (subcanalAdmin == 0)
+                    {
+                        return StatusCode(403, new
+                        {
+                            message = "Acceso denegado",
+                            details = "No tienes un subcanal asignado, por lo que no puedes eliminar vendors"
+                        });
+                    }
+
+                    bool tienePermiso = await _usuarioService.VerificarVendorEnSubcanalAsync(id, subcanalAdmin);
+                    if (!tienePermiso)
+                    {
+                        return StatusCode(403, new
+                        {
+                            message = "Acceso denegado",
+                            details = "No puedes eliminar a este usuario porque no pertenece a tu subcanal"
+                        });
+                    }
+
+                    await _usuarioService.EliminarUsuarioAsync(id);
+                    return Ok(new { message = "Usuario eliminado correctamente" });
+                }
+
+                return Forbid();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Error al eliminar el usuario",
+                    details = ex.Message
+                });
+            }
+        }
     }
 }

@@ -127,6 +127,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             };
         }
 
+        public async Task<bool> EliminarUsuarioAsync(int usuarioId)
+        {
+            var usuario = await _usuarioRepository.GetByIdAsync(usuarioId);
+
+            if (usuario == null)
+                throw new KeyNotFoundException($"No se encontró el usuario con ID {usuarioId}");
+
+            // Verificar si el usuario tiene operaciones o clientes relacionados
+            // Esto es opcional, dependiendo de si quieres permitir la eliminación de usuarios con datos relacionados
+
+            await _usuarioRepository.DeleteAsync(usuario);
+            return true; // Indica que la eliminación fue exitosa
+        }
         public async Task<IReadOnlyList<UsuarioDto>> ObtenerTodosUsuariosAsync()
         {
             var usuarios = await _usuarioRepository.GetAllWithRolesAsync();

@@ -513,5 +513,33 @@ namespace MundoPrendarios.API.Controllers
                 return StatusCode(500, new { mensaje = ex.Message });
             }
         }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteCanal(int id)
+        {
+            // Solo Admin puede eliminar canales
+            if (!_currentUserService.IsAdmin())
+            {
+                return StatusCode(403, new { mensaje = "Solo los administradores pueden eliminar canales." });
+            }
+
+            try
+            {
+                await _canalService.EliminarCanalAsync(id);
+                return Ok(new { mensaje = "Canal eliminado correctamente." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
     }
 }

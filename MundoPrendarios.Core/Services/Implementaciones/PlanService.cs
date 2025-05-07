@@ -1,5 +1,6 @@
 ﻿// MundoPrendarios.Core.Services.Implementaciones/PlanService.cs
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MundoPrendarios.Core.DTOs;
 using MundoPrendarios.Core.Entities;
 using MundoPrendarios.Core.Interfaces;
@@ -11,15 +12,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
     {
         private readonly IPlanRepository _planRepository;
         private readonly IPlanTasaRepository _planTasaRepository;
+        private readonly IPlanCanalRepository _planCanalRepository; 
+
         private readonly IMapper _mapper;
 
         public PlanService(
             IPlanRepository planRepository,
             IPlanTasaRepository planTasaRepository,
+            IPlanCanalRepository planCanalRepository,
             IMapper mapper)
         {
             _planRepository = planRepository;
             _planTasaRepository = planTasaRepository;
+            _planCanalRepository = planCanalRepository; 
             _mapper = mapper;
         }
 
@@ -89,7 +94,55 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             return planesDto;
         }
+        public async Task EliminarPlanAsync(int planId)
+        {
+            var plan = await _planRepository.GetByIdAsync(planId);
 
+            if (plan == null)
+                throw new KeyNotFoundException($"No se encontró el plan con ID {planId}");
+
+            // Opcionalmente verificar si el plan está siendo utilizado en operaciones
+            // o tiene asociaciones con canales antes de eliminarlo
+
+            await _planRepository.DeleteAsync(plan);
+        }
+        public async Task<IEnumerable<int>> ObtenerCanalesPorPlanIdAsync(int planId)
+        {
+            // Verificar que el plan existe
+            var plan = await _planRepository.GetByIdAsync(planId);
+            if (plan == null)
+            {
+                throw new KeyNotFoundException($"No se encontró el plan con ID {planId}");
+            }
+
+            try
+            {
+                // Usar el repositorio para obtener los PlanCanal
+                var planesCanales = await _planCanalRepository.GetPlanCanalByPlanAsync(planId);
+
+                // Verificar si planesCanales es null antes de procesarlo
+                if (planesCanales == null)
+                {
+                    return new List<int>(); // Devolver lista vacía si no hay resultados
+                }
+
+                // Extraer solo los IDs de canal con protección contra nulos
+                var canalIds = planesCanales
+                    .Where(pc => pc != null) // Filtrar cualquier entrada nula
+                    .Select(pc => pc.CanalId)
+                    .ToList();
+
+                return canalIds;
+            }
+            catch (Exception ex)
+            {
+                // Loguear la excepción (si tienes un sistema de logging)
+                Console.WriteLine($"Error al obtener canales para el plan {planId}: {ex.Message}");
+
+                // Devolver lista vacía en caso de error
+                return new List<int>();
+            }
+        }
         public async Task<PlanDto> ObtenerPlanPorIdAsync(int id)
         {
             var plan = await _planRepository.GetByIdAsync(id);

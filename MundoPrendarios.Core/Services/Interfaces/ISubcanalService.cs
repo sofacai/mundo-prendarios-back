@@ -29,6 +29,7 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task<SubcanalDto> ActualizarComisionAsync(int subcanalId, ComisionActualizarDto comisionDto);
         Task<GastoDto> ObtenerGastoPorIdAsync(int gastoId);
 
+        Task EliminarSubcanalAsync(int subcanalId);
 
 
     }

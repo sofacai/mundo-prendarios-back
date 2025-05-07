@@ -639,6 +639,39 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteSubcanal(int id)
+        {
+            try
+            {
+                // Verificar permisos para este subcanal específico
+                var (tienePermiso, respuestaError) = await VerificarPermisoSubcanal(id);
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Solo Admin y OficialComercial pueden eliminar subcanales
+                if (!_currentUserService.IsAdmin() && !_currentUserService.IsOficialComercial())
+                {
+                    return StatusCode(403, new { mensaje = "Solo los administradores y oficiales comerciales pueden eliminar subcanales." });
+                }
+
+                await _subcanalService.EliminarSubcanalAsync(id);
+                return Ok(new { mensaje = "Subcanal eliminado correctamente." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
         // PATCH: api/Subcanal/5/comision
         [HttpPatch("{id}/comision")]
         public async Task<ActionResult<SubcanalDto>> ActualizarComision(int id, ComisionActualizarDto comisionDto)

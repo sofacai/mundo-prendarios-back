@@ -123,7 +123,18 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             return subcanalDto;
         }
+        public async Task EliminarSubcanalAsync(int subcanalId)
+        {
+            var subcanal = await _subcanalRepository.GetByIdAsync(subcanalId);
 
+            if (subcanal == null)
+                throw new KeyNotFoundException($"No se encontró el subcanal con ID {subcanalId}");
+
+            // Opcional: Verificar si hay relaciones que impidan eliminar el subcanal
+            // Por ejemplo, si tiene vendors asignados, gastos, o operaciones
+
+            await _subcanalRepository.DeleteAsync(subcanal);
+        }
         public async Task<IReadOnlyList<SubcanalDto>> ObtenerSubcanalesPorCanalAsync(int canalId)
         {
             var subcanales = await _subcanalRepository.GetSubcanalesByCanalAsync(canalId);

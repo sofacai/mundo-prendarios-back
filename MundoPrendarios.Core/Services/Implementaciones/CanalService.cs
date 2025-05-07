@@ -242,6 +242,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             await _canalRepository.ActivateDesactivateSubcanalesAsync(canalId, activar);
         }
 
+        public async Task<bool> EliminarCanalAsync(int canalId)
+        {
+            var canal = await _canalRepository.GetByIdAsync(canalId);
+
+            if (canal == null)
+                throw new KeyNotFoundException($"No se encontró el canal con ID {canalId}");
+
+            // Opcional: Verificar si hay relaciones que impidan eliminar el canal
+            // Por ejemplo, verificar si tiene subcanales, planes asignados, etc.
+
+            await _canalRepository.DeleteAsync(canal);
+            return true; // Indica que la eliminación fue exitosa
+        }
         public async Task ActualizarCanalAsync(int id, CanalCrearDto canalDto)
         {
             var canal = await _canalRepository.GetByIdAsync(id);

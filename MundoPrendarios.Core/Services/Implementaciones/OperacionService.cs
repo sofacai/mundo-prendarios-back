@@ -126,7 +126,17 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 await _usuarioRepository.UpdateAsync(vendor);
             }
         }
+        public async Task<bool> EliminarOperacionAsync(int operacionId)
+        {
+            var operacion = await _operacionRepository.GetByIdAsync(operacionId);
+            if (operacion == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
+            }
 
+            await _operacionRepository.DeleteAsync(operacion);
+            return true; // Indica que la eliminación fue exitosa
+        }
         public async Task<OperacionDto> ObtenerOperacionPorIdAsync(int id)
         {
             var operacion = await _operacionRepository.GetOperacionWithDetailsAsync(id);

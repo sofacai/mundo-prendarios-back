@@ -19,7 +19,8 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task ActualizarUsuarioRestringidoAsync(int id, UsuarioCrearDto usuarioDto);
         Task<bool> VerificarCanalDeSubcanalAsync(int canalId, int subcanalId);
         Task<VendorEstadisticasDto> ObtenerEstadisticasVendorAsync(int vendorId);
-        Task<IReadOnlyList<UsuarioDto>> ObtenerUsuariosPorCreadorAsync(int creadorId); 
+        Task<IReadOnlyList<UsuarioDto>> ObtenerUsuariosPorCreadorAsync(int creadorId);
+        Task<bool> EliminarUsuarioAsync(int usuarioId);
 
 
     }

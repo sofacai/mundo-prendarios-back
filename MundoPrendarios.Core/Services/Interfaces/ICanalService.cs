@@ -11,5 +11,7 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task ActivarDesactivarCanalAsync(int canalId, bool activar);
         Task ActivarDesactivarSubcanalesAsync(int canalId, bool activar);
         Task ActualizarCanalAsync(int id, CanalCrearDto canalDto);
+        Task<bool> EliminarCanalAsync(int canalId);
+
     }
 }

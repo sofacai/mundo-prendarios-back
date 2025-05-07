@@ -193,6 +193,64 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeletePlan(int id)
+        {
+            try
+            {
+                if (!_currentUserService.IsAdmin())
+                {
+                    return StatusCode(403, new { mensaje = "Solo los administradores pueden eliminar planes." });
+                }
+
+                await _planService.EliminarPlanAsync(id);
+                return Ok(new { mensaje = "Plan eliminado correctamente." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // GET: api/Plan/5/canales
+        [HttpGet("{planId}/canales")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<object>>> GetCanalesByPlanId(int planId)
+        {
+            try
+            {
+                // Verificar permisos
+                if (!_currentUserService.IsAdmin())
+                {
+                    return StatusCode(403, new { mensaje = "Solo los administradores pueden ver la asignación de planes a canales." });
+                }
+
+                // Verificar que el plan existe
+                var plan = await _planService.ObtenerPlanPorIdAsync(planId);
+                if (plan == null)
+                {
+                    return NotFound(new { mensaje = $"No se encontró el plan con ID {planId}" });
+                }
+
+                // Obtener los canales donde está asignado este plan
+                var canales = await _planService.ObtenerCanalesPorPlanIdAsync(planId);
+
+                return Ok(canales);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
         // PATCH: api/Plan/5/activar
         [HttpPatch("{id}/activar")]
         [Authorize]
