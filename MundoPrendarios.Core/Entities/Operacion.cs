@@ -1,4 +1,5 @@
-﻿namespace MundoPrendarios.Core.Entities
+﻿// MundoPrendarios.Core/Entities/Operacion.cs
+namespace MundoPrendarios.Core.Entities
 {
     public class Operacion
     {
@@ -26,7 +27,6 @@
 
         public string PlanAprobadoNombre { get; set; }
 
-
         public DateTime? FechaAprobacion { get; set; }
 
         // Datos adicionales para liquidación
@@ -50,5 +50,11 @@
         public string AutoAprobado { get; set; }
         public string UrlAprobadoDefinitivo { get; set; }
         public string Observaciones { get; set; }
+
+        // *** NUEVAS PROPIEDADES AGREGADAS ***
+        public decimal? GastoInicial { get; set; }
+        public decimal? GastoAprobado { get; set; }
+        public string BancoInicial { get; set; }
+        public string BancoAprobado { get; set; }
     }
 }

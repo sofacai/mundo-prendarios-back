@@ -1,4 +1,4 @@
-﻿// MundoPrendarios.Core.DTOs/OperacionDto.cs
+﻿// MundoPrendarios.Core/DTOs/OperacionDto.cs
 namespace MundoPrendarios.Core.DTOs
 {
     public class OperacionDto
@@ -44,8 +44,13 @@ namespace MundoPrendarios.Core.DTOs
         public string AutoAprobado { get; set; }
         public string UrlAprobadoDefinitivo { get; set; }
         public string Observaciones { get; set; }
-    }
 
+        // *** NUEVAS PROPIEDADES AGREGADAS ***
+        public decimal? GastoInicial { get; set; }
+        public decimal? GastoAprobado { get; set; }
+        public string BancoInicial { get; set; }
+        public string BancoAprobado { get; set; }
+    }
 
     public class OperacionCrearDto
     {
@@ -54,7 +59,7 @@ namespace MundoPrendarios.Core.DTOs
         public decimal Tasa { get; set; }
         public int ClienteId { get; set; }
         public int PlanId { get; set; }
-        public int? VendedorId { get; set; }  
+        public int? VendedorId { get; set; }
         public int? SubcanalId { get; set; }
         public int? CanalId { get; set; }
         public int? UsuarioCreadorId { get; set; }
@@ -63,6 +68,10 @@ namespace MundoPrendarios.Core.DTOs
         public decimal? CuotaPromedio { get; set; }
         public string AutoInicial { get; set; }
         public string Observaciones { get; set; }
+
+        // *** NUEVAS PROPIEDADES AGREGADAS ***
+        public decimal? GastoInicial { get; set; }
+        public string BancoInicial { get; set; }
     }
 
     public class OperacionCambiarEstadoDto
@@ -74,7 +83,6 @@ namespace MundoPrendarios.Core.DTOs
     {
         public DateTime FechaLiquidacion { get; set; } = DateTime.Now;
     }
-
 
     public class OperacionAprobarDto
     {
@@ -89,8 +97,10 @@ namespace MundoPrendarios.Core.DTOs
         public string AutoAprobado { get; set; }
         public string UrlAprobadoDefinitivo { get; set; }
 
+        // *** NUEVAS PROPIEDADES AGREGADAS ***
+        public decimal? GastoAprobado { get; set; }
+        public string BancoAprobado { get; set; }
     }
-
 
     public class OperacionCotizarDto
     {

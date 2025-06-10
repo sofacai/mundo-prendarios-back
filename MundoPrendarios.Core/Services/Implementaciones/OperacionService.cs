@@ -65,32 +65,34 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 Tasa = operacionDto.Tasa,
                 ClienteId = operacionDto.ClienteId,
                 PlanId = operacionDto.PlanId,
-                VendedorId = operacionDto.VendedorId, // Ya es nullable, no necesita conversion
+                VendedorId = operacionDto.VendedorId,
                 SubcanalId = operacionDto.SubcanalId ?? 0,
                 CanalId = operacionDto.CanalId ?? cliente.CanalId,
                 FechaCreacion = DateTime.Now,
                 Estado = operacionDto.Estado ?? "Propuesta",
-                UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId, // Guardar el ID del usuario que crea
-                    CuotaInicial = operacionDto.CuotaInicial,
+                UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId,
+                CuotaInicial = operacionDto.CuotaInicial,
                 CuotaPromedio = operacionDto.CuotaPromedio,
                 AutoInicial = operacionDto.AutoInicial,
-                Observaciones = operacionDto.Observaciones
+                Observaciones = operacionDto.Observaciones,
+
+                // *** NUEVOS CAMPOS AGREGADOS ***
+                GastoInicial = operacionDto.GastoInicial,
+                BancoInicial = operacionDto.BancoInicial
             };
 
-            // Lógica para asignar subcanal si el usuario es vendor
+            // Lógica existente para asignar subcanal si el usuario es vendor...
             if (usuarioId.HasValue && !operacion.VendedorId.HasValue)
             {
                 var usuario = await _usuarioRepository.GetByIdAsync(usuarioId.Value);
                 if (usuario != null && usuario.RolId == 3) // Si es vendor
                 {
-                    operacion.VendedorId = usuarioId.Value; // Auto-asignarse como vendedor
+                    operacion.VendedorId = usuarioId.Value;
 
-                    // Obtener el primer subcanal al que pertenece el vendor
                     var subcanalVendors = await _subcanalRepository.GetSubcanalesByVendorAsync(usuarioId.Value);
                     if (subcanalVendors.Any() && operacion.SubcanalId == 0)
                     {
                         operacion.SubcanalId = subcanalVendors.First().Id;
-                        // También asignar el canal basándonos en el subcanal
                         operacion.CanalId = subcanalVendors.First().CanalId;
                     }
                 }
@@ -98,16 +100,17 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             await _operacionRepository.AddAsync(operacion);
 
-            // Actualizar estadísticas del vendor solo si hay un vendedor asignado
             if (operacion.VendedorId.HasValue)
             {
                 await ActualizarEstadisticasVendorAsync(operacion.VendedorId.Value);
             }
 
-            // Cargar datos relacionados para el DTO
             var operacionDetallada = await _operacionRepository.GetOperacionWithDetailsAsync(operacion.Id);
             return _mapper.Map<OperacionDto>(operacionDetallada);
         }
+
+
+
 
         // Método para actualizar las estadísticas del vendor
         public async Task ActualizarEstadisticasVendorAsync(int vendorId)
@@ -394,11 +397,12 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
             }
 
-            // Actualizar los campos de aprobación
+            // Actualizar los campos de aprobación existentes
             operacion.MontoAprobado = aprobarDto.MontoAprobado;
             operacion.MesesAprobados = aprobarDto.MesesAprobados;
             operacion.TasaAprobada = aprobarDto.TasaAprobada;
             operacion.PlanAprobadoId = aprobarDto.PlanAprobadoId;
+            operacion.PlanAprobadoNombre = aprobarDto.PlanAprobadoNombre;
             operacion.FechaAprobacion = DateTime.Now;
             operacion.Estado = "Aprobada";
             operacion.CuotaInicialAprobada = aprobarDto.CuotaInicialAprobada;
@@ -406,9 +410,12 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             operacion.AutoAprobado = aprobarDto.AutoAprobado;
             operacion.UrlAprobadoDefinitivo = aprobarDto.UrlAprobadoDefinitivo;
 
+            // *** NUEVOS CAMPOS AGREGADOS ***
+            operacion.GastoAprobado = aprobarDto.GastoAprobado;
+            operacion.BancoAprobado = aprobarDto.BancoAprobado;
+
             await _operacionRepository.UpdateAsync(operacion);
 
-            // Cargar datos relacionados para el DTO
             var operacionActualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
             return _mapper.Map<OperacionDto>(operacionActualizada);
         }
@@ -465,7 +472,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             if (operacion == null)
                 throw new KeyNotFoundException($"No se encontró la operación con ID {dto.OperacionId}");
 
-            // Actualizar campos aprobados si están presentes
+            // Actualizar campos existentes
             if (dto.MontoAprobado.HasValue)
                 operacion.MontoAprobado = dto.MontoAprobado;
 
@@ -480,6 +487,25 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
             if (!string.IsNullOrEmpty(dto.EstadoDesdeEtiqueta))
                 operacion.Estado = dto.EstadoDesdeEtiqueta;
+
+            if (dto.CuotaInicialAprobada.HasValue)
+                operacion.CuotaInicialAprobada = dto.CuotaInicialAprobada;
+
+            if (dto.CuotaPromedioAprobada.HasValue)
+                operacion.CuotaPromedioAprobada = dto.CuotaPromedioAprobada;
+
+            if (!string.IsNullOrEmpty(dto.AutoAprobado))
+                operacion.AutoAprobado = dto.AutoAprobado;
+
+            if (!string.IsNullOrEmpty(dto.Observaciones))
+                operacion.Observaciones = dto.Observaciones;
+
+            // *** NUEVOS CAMPOS AGREGADOS ***
+            if (dto.GastoAprobado.HasValue)
+                operacion.GastoAprobado = dto.GastoAprobado;
+
+            if (!string.IsNullOrEmpty(dto.BancoAprobado))
+                operacion.BancoAprobado = dto.BancoAprobado;
 
             operacion.FechaAprobacion = DateTime.UtcNow;
 

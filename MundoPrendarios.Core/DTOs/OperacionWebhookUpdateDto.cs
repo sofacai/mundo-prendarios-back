@@ -13,5 +13,9 @@
         public decimal? CuotaPromedioAprobada { get; set; }
         public string? AutoAprobado { get; set; }
         public string? Observaciones { get; set; }
+
+        // *** NUEVAS PROPIEDADES AGREGADAS ***
+        public decimal? GastoAprobado { get; set; }
+        public string? BancoAprobado { get; set; }
     }
 }
