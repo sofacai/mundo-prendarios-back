@@ -553,6 +553,132 @@ namespace MundoPrendarios.API.Controllers
             }
         }
 
+        // PATCH: api/Operacion/5/fecha-aprobacion
+        [HttpPatch("{id}/fecha-aprobacion")]
+        [Authorize]
+        public async Task<ActionResult<OperacionDto>> ActualizarFechaAprobacion(int id, OperacionActualizarFechaAprobacionDto fechaDto)
+        {
+            try
+            {
+                // Verificar permisos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Obtener la operación para verificar permisos específicos
+                var operacionExistente = await _operacionService.ObtenerOperacionPorIdAsync(id);
+                if (operacionExistente == null)
+                {
+                    return NotFound(new { mensaje = "No se encontró la operación especificada." });
+                }
+
+                // Verificar permisos según rol (similar a los otros endpoints)
+                if (!_currentUserService.IsAdmin())
+                {
+                    if (_currentUserService.IsOficialComercial())
+                    {
+                        int usuarioId = _currentUserService.GetUserId();
+                        var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                        var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                        if (!canalesIds.Contains(operacionExistente.CanalId.Value))
+                        {
+                            return Forbid();
+                        }
+                    }
+                    else if (_currentUserService.IsAdminCanal())
+                    {
+                        int usuarioId = _currentUserService.GetUserId();
+                        var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+                        var subcanalIds = subcanales.Select(s => s.Id).ToList();
+
+                        if (!operacionExistente.SubcanalId.HasValue || !subcanalIds.Contains(operacionExistente.SubcanalId.Value))
+                        {
+                            return Forbid();
+                        }
+                    }
+                    else
+                    {
+                        return Forbid(); // Vendors no pueden modificar fecha de aprobación
+                    }
+                }
+
+                var operacion = await _operacionService.ActualizarFechaAprobacionAsync(id, fechaDto.FechaAprobacion);
+                return Ok(operacion);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
+        // PATCH: api/Operacion/5/fecha-liquidacion
+        [HttpPatch("{id}/fecha-liquidacion")]
+        [Authorize]
+        public async Task<ActionResult<OperacionDto>> ActualizarFechaLiquidacion(int id, OperacionActualizarFechaLiquidacionDto fechaDto)
+        {
+            try
+            {
+                // Verificar permisos
+                var (tienePermiso, respuestaError, canalesPermitidos) = await VerificarPermiso();
+                if (!tienePermiso)
+                    return respuestaError;
+
+                // Obtener la operación para verificar permisos específicos
+                var operacionExistente = await _operacionService.ObtenerOperacionPorIdAsync(id);
+                if (operacionExistente == null)
+                {
+                    return NotFound(new { mensaje = "No se encontró la operación especificada." });
+                }
+
+                // Verificar permisos según rol (similar a los otros endpoints)
+                if (!_currentUserService.IsAdmin())
+                {
+                    if (_currentUserService.IsOficialComercial())
+                    {
+                        int usuarioId = _currentUserService.GetUserId();
+                        var canalesAsignados = await _canalOficialComercialService.ObtenerCanalesPorOficialComercialAsync(usuarioId);
+                        var canalesIds = canalesAsignados.Select(c => c.Id).ToList();
+
+                        if (!canalesIds.Contains(operacionExistente.CanalId.Value))
+                        {
+                            return Forbid();
+                        }
+                    }
+                    else if (_currentUserService.IsAdminCanal())
+                    {
+                        int usuarioId = _currentUserService.GetUserId();
+                        var subcanales = await _subcanalService.ObtenerSubcanalesPorAdminCanalAsync(usuarioId);
+                        var subcanalIds = subcanales.Select(s => s.Id).ToList();
+
+                        if (!operacionExistente.SubcanalId.HasValue || !subcanalIds.Contains(operacionExistente.SubcanalId.Value))
+                        {
+                            return Forbid();
+                        }
+                    }
+                    else
+                    {
+                        return Forbid(); // Vendors no pueden modificar fecha de liquidación
+                    }
+                }
+
+                var operacion = await _operacionService.ActualizarFechaLiquidacionAsync(id, fechaDto.FechaLiquidacion);
+                return Ok(operacion);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = ex.Message });
+            }
+        }
+
         // GET: api/Operacion/estado/Aprobada
         [HttpGet("estado/{estado}")]
         [Authorize]

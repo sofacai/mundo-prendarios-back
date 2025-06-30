@@ -515,5 +515,44 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             return _mapper.Map<OperacionDto>(actualizada);
         }
 
+        public async Task<OperacionDto> ActualizarFechaAprobacionAsync(int operacionId, DateTime? fechaAprobacion)
+        {
+            var operacion = await _operacionRepository.GetByIdAsync(operacionId);
+            if (operacion == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
+            }
+
+            // Actualizar la FechaAprobacion (puede ser null para quitarla)
+            operacion.FechaAprobacion = fechaAprobacion;
+
+            await _operacionRepository.UpdateAsync(operacion);
+
+            // Devolver la operación actualizada con todos los detalles
+            var operacionActualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
+            return _mapper.Map<OperacionDto>(operacionActualizada);
+        }
+
+        public async Task<OperacionDto> ActualizarFechaLiquidacionAsync(int operacionId, DateTime? fechaLiquidacion)
+        {
+            var operacion = await _operacionRepository.GetByIdAsync(operacionId);
+            if (operacion == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
+            }
+
+            // Actualizar la FechaLiquidacion (puede ser null para quitarla)
+            operacion.FechaLiquidacion = fechaLiquidacion;
+            
+            // Si se establece fecha, marcar como liquidada; si se quita, desmarcar
+            operacion.Liquidada = fechaLiquidacion.HasValue;
+
+            await _operacionRepository.UpdateAsync(operacion);
+
+            // Devolver la operación actualizada con todos los detalles
+            var operacionActualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
+            return _mapper.Map<OperacionDto>(operacionActualizada);
+        }
+
     }
 }

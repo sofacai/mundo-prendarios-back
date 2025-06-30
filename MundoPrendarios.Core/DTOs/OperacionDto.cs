@@ -84,6 +84,16 @@ namespace MundoPrendarios.Core.DTOs
         public DateTime FechaLiquidacion { get; set; } = DateTime.Now;
     }
 
+    public class OperacionActualizarFechaAprobacionDto
+    {
+        public DateTime? FechaAprobacion { get; set; }
+    }
+
+    public class OperacionActualizarFechaLiquidacionDto
+    {
+        public DateTime? FechaLiquidacion { get; set; }
+    }
+
     public class OperacionAprobarDto
     {
         public decimal MontoAprobado { get; set; }

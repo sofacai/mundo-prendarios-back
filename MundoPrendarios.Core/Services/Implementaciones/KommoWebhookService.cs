@@ -185,6 +185,22 @@ namespace MundoPrendarios.Core.Services.Implementaciones
 
                 // Determinar estado según tags
                 string nuevoEstado = DeterminarEstadoDesdeTagsMultiples(tags);
+                
+                // Si el nuevo estado es "APROBADO DEF" y no hay fecha de aprobación previa, establecerla
+                if (nuevoEstado == "APROBADO DEF" && operacion.FechaAprobacion == null)
+                {
+                    operacion.FechaAprobacion = DateTime.UtcNow;
+                    updateDto.FechaAprobacion = operacion.FechaAprobacion;
+                }
+                
+                // Si el nuevo estado es "LIQUIDADA" y no hay fecha de liquidación previa, establecerla
+                if (nuevoEstado == "LIQUIDADA" && operacion.FechaLiquidacion == null)
+                {
+                    operacion.FechaLiquidacion = DateTime.UtcNow;
+                    operacion.Liquidada = true;
+                    updateDto.FechaLiquidacion = operacion.FechaLiquidacion;
+                }
+                
                 operacion.Estado = nuevoEstado;
                 updateDto.EstadoDesdeEtiqueta = nuevoEstado;
 
