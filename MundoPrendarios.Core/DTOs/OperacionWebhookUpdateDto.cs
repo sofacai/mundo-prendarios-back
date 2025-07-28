@@ -4,6 +4,7 @@
     {
         public int OperacionId { get; set; }
         public decimal? MontoAprobado { get; set; }
+        public decimal? MontoAprobadoBanco { get; set; }
         public decimal? TasaAprobada { get; set; }
         public int? MesesAprobados { get; set; }
         public string? PlanAprobadoNombre { get; set; }

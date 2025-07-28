@@ -117,7 +117,7 @@ namespace MundoPrendarios.Core.Mapping
                 .ForMember(dest => dest.PlanNombre, opt =>
                     opt.MapFrom(src => src.Plan != null ? src.Plan.Nombre : string.Empty))
                 .ForMember(dest => dest.PlanAprobadoNombre, opt =>
-    opt.MapFrom(src => src.PlanAprobadoNombre))
+                    opt.MapFrom(src => src.PlanAprobadoNombre))
                 .ForMember(dest => dest.VendedorNombre, opt =>
                     opt.MapFrom(src => src.Vendedor != null ? $"{src.Vendedor.Nombre} {src.Vendedor.Apellido}" : string.Empty))
                 .ForMember(dest => dest.UsuarioCreadorNombre, opt =>
@@ -125,7 +125,11 @@ namespace MundoPrendarios.Core.Mapping
                 .ForMember(dest => dest.SubcanalNombre, opt =>
                     opt.MapFrom(src => src.Subcanal != null ? src.Subcanal.Nombre : string.Empty))
                 .ForMember(dest => dest.CanalNombre, opt =>
-                    opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : string.Empty));
+                    opt.MapFrom(src => src.Canal != null ? src.Canal.NombreFantasia : string.Empty))
+                .ForMember(dest => dest.MontoAprobado, opt =>
+                    opt.MapFrom(src => src.MontoAprobado))
+                .ForMember(dest => dest.MontoAprobadoBanco, opt =>
+                    opt.MapFrom(src => src.MontoAprobadoBanco));
 
             // Cliente and related DTOs
             CreateMap<Cliente, ClienteDto>()

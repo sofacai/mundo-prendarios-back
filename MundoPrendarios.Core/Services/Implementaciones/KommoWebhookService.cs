@@ -70,6 +70,19 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                         }
                     }
 
+                    // MontoAprobadoBanco: field_id 979750
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "979750")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
+                            var monto = ParseDecimal(value);
+                            operacion.MontoAprobadoBanco = monto;
+                            updateDto.MontoAprobadoBanco = monto;
+                        }
+                    }
+
                     // TasaAprobada: field_id 964768 (TNA Final)
                     else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "964768")
                     {
@@ -170,6 +183,18 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                             operacion.UrlAprobadoDefinitivo = value;
                         }
                     }
+
+                    // BancoAprobado: field_id 1018782
+                    else if (key.Contains("[custom_fields]") && key.EndsWith("[id]") && form[key] == "1018782")
+                    {
+                        string valueKey = key.Replace("[id]", "[values][0][value]");
+                        if (form.ContainsKey(valueKey))
+                        {
+                            var value = form[valueKey].ToString();
+                            operacion.BancoAprobado = value;
+                            updateDto.BancoAprobado = value;
+                        }
+                    }
                 }
 
                 // Procesar tags para determinar estado
@@ -193,8 +218,8 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                     updateDto.FechaAprobacion = operacion.FechaAprobacion;
                 }
                 
-                // Si el nuevo estado es "LIQUIDADA" y no hay fecha de liquidación previa, establecerla
-                if (nuevoEstado == "LIQUIDADA" && operacion.FechaLiquidacion == null)
+                // Si el nuevo estado es "LIQUIDADO" y no hay fecha de liquidación previa, establecerla
+                if (nuevoEstado == "LIQUIDADO" && operacion.FechaLiquidacion == null)
                 {
                     operacion.FechaLiquidacion = DateTime.UtcNow;
                     operacion.Liquidada = true;
@@ -202,6 +227,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 }
                 
                 operacion.Estado = nuevoEstado;
+                operacion.EstadoDashboard = DeterminarEstadoDashboard(nuevoEstado);
                 updateDto.EstadoDesdeEtiqueta = nuevoEstado;
 
                 // Actualizar en BD
@@ -254,23 +280,37 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             // Mapeo de tags a estados
             var mapeo = new Dictionary<string, string>
     {
-        { "Enviar a Banco", "ENVIADA" },
+        { "Enviar a Banco", "ENVIADA MP" },
         { "Aprobado definitivo", "APROBADO DEF" },
-        { "Pasa a análisis", "ANALISIS DE BCO" },
-        { "Aprobado Provisorio", "EN GESTION" },
-        { "Completar documentación", "EN GESTION" },
-        { "Firmar documentación", "FIRMAR DOCUM" },
-        { "Inscripción de prenda propio", "EN PROC.INSC." },
-        { "Inscripción prenda canal", "EN PROC.INSC." },
-        { "Envío a liquidar", "EN PROC.LIQ." },
+        { "Pasa a análisis", "ENVIADA MP" },
+        { "Aprobado Provisorio", "APROBADO PROV." },
+        { "Completar documentación", "CONFEC. PRENDA" },
+        { "Firmar documentación", "CONFEC. PRENDA" },
+        { "Inscripción de prenda propio", "CONFEC. PRENDA" },
+        { "Inscripción prenda canal", "CONFEC. PRENDA" },
+        { "Envío a liquidar", "CONFEC. PRENDA" },
         { "Rechazado BCRA", "RECHAZADO" },
         { "Rechazado Banco", "RECHAZADO" },
-        { "Buqueado", "LIQUIDADA" },
-        { "Liquidado Canal", "LIQUIDADA" }
+        { "Buqueado", "EN PROC. LIQ." },
+        { "Liquidado Canal", "LIQUIDADO" },
+        { "PREND. INS. ENTR.", "LIQUIDADO" }  // Nueva etiqueta ID 115788
     };
 
             // Usar el mapeo para un solo tag
             return mapeo.TryGetValue(tags[0], out var estado) ? estado : "EN GESTION";
+        }
+
+        private static string DeterminarEstadoDashboard(string estado)
+        {
+            return estado switch
+            {
+                "LIQUIDADO" => "LIQUIDADA",     // Estado de Kommo
+                "Liquidada" => "LIQUIDADA",     // Estado manual del servicio
+                "RECHAZADO" => "INGRESADA",     // Rechazadas van a INGRESADA
+                "Propuesta" => "INGRESADA",     // Solo las propuestas iniciales
+                "ENVIADA MP" => "INGRESADA",    // Enviada a Mundo Prendarios
+                _ => "APROBADA" // Estados en proceso: APROBADO DEF, APROBADO PROV., CONFEC. PRENDA, EN PROC. LIQ., EN GESTION
+            };
         }
     }
 }

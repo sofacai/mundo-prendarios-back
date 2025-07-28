@@ -23,9 +23,11 @@ namespace MundoPrendarios.Core.DTOs
         public int? UsuarioCreadorId { get; set; }
         public string UsuarioCreadorNombre { get; set; }
         public string Estado { get; set; }
+        public string EstadoDashboard { get; set; }
 
         // Campos para la propuesta real/aprobada
         public decimal? MontoAprobado { get; set; }
+        public decimal? MontoAprobadoBanco { get; set; }
         public int? MesesAprobados { get; set; }
         public decimal? TasaAprobada { get; set; }
         public int? PlanAprobadoId { get; set; }
@@ -64,6 +66,7 @@ namespace MundoPrendarios.Core.DTOs
         public int? CanalId { get; set; }
         public int? UsuarioCreadorId { get; set; }
         public string Estado { get; set; }
+        public string EstadoDashboard { get; set; }
         public decimal? CuotaInicial { get; set; }
         public decimal? CuotaPromedio { get; set; }
         public string AutoInicial { get; set; }
@@ -97,6 +100,7 @@ namespace MundoPrendarios.Core.DTOs
     public class OperacionAprobarDto
     {
         public decimal MontoAprobado { get; set; }
+        public decimal? MontoAprobadoBanco { get; set; }
         public int MesesAprobados { get; set; }
         public decimal TasaAprobada { get; set; }
         public int PlanAprobadoId { get; set; }

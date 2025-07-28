@@ -17,9 +17,11 @@ namespace MundoPrendarios.Core.Entities
         // Nuevos campos
         public int? UsuarioCreadorId { get; set; } // Usuario que creó la operación
         public string Estado { get; set; } = "Propuesta"; // Propuesta, Aprobada, Rechazada, Liquidada, etc.
+        public string EstadoDashboard { get; set; } = "INGRESADA"; // INGRESADA, APROBADA, LIQUIDADA
 
         // Campos para la propuesta real/aprobada
         public decimal? MontoAprobado { get; set; }
+        public decimal? MontoAprobadoBanco { get; set; }
         public int? MesesAprobados { get; set; }
         public decimal? TasaAprobada { get; set; }
         public int? PlanAprobadoId { get; set; }

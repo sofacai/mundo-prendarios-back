@@ -70,6 +70,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 CanalId = operacionDto.CanalId ?? cliente.CanalId,
                 FechaCreacion = DateTime.Now,
                 Estado = operacionDto.Estado ?? "Propuesta",
+                EstadoDashboard = operacionDto.EstadoDashboard ?? "INGRESADA",
                 UsuarioCreadorId = operacionDto.UsuarioCreadorId ?? usuarioId,
                 CuotaInicial = operacionDto.CuotaInicial,
                 CuotaPromedio = operacionDto.CuotaPromedio,
@@ -405,6 +406,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             operacion.PlanAprobadoNombre = aprobarDto.PlanAprobadoNombre;
             operacion.FechaAprobacion = DateTime.Now;
             operacion.Estado = "Aprobada";
+            operacion.EstadoDashboard = DeterminarEstadoDashboard("Aprobada");
             operacion.CuotaInicialAprobada = aprobarDto.CuotaInicialAprobada;
             operacion.CuotaPromedioAprobada = aprobarDto.CuotaPromedioAprobada;
             operacion.AutoAprobado = aprobarDto.AutoAprobado;
@@ -447,6 +449,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             operacion.Liquidada = true;
             operacion.FechaLiquidacion = fechaLiquidacion;
             operacion.Estado = "Liquidada";
+            operacion.EstadoDashboard = DeterminarEstadoDashboard("Liquidada");
             await _operacionRepository.UpdateAsync(operacion);
 
             // Cargar datos relacionados para el DTO
@@ -475,6 +478,9 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             // Actualizar campos existentes
             if (dto.MontoAprobado.HasValue)
                 operacion.MontoAprobado = dto.MontoAprobado;
+
+            if (dto.MontoAprobadoBanco.HasValue)
+                operacion.MontoAprobadoBanco = dto.MontoAprobadoBanco;
 
             if (dto.TasaAprobada.HasValue)
                 operacion.TasaAprobada = dto.TasaAprobada;
@@ -554,5 +560,33 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             return _mapper.Map<OperacionDto>(operacionActualizada);
         }
 
+        private static string DeterminarEstadoDashboard(string estado)
+        {
+            return estado switch
+            {
+                // LIQUIDADAS
+                "LIQUIDADO" => "LIQUIDADA",     // Estado de Kommo
+                "Liquidada" => "LIQUIDADA",     // Estado manual del servicio
+                
+                // INGRESADAS
+                "RECHAZADO" => "INGRESADA",     // Rechazada de Kommo
+                "Rechazada" => "INGRESADA",     // Rechazada manual
+                "ENVIADA MP" => "INGRESADA",    // Enviada a Mundo Prendarios
+                "Ingresada" => "INGRESADA",     // Estado base
+                
+                // APROBADAS (estados en proceso)
+                "APROBADO DEF" => "APROBADA",   // Aprobado definitivo
+                "APROBADO PROV." => "APROBADA", // Aprobado provisorio
+                "EN PROC. LIQ." => "APROBADA",  // En proceso de liquidación
+                "Aprobada" => "APROBADA",       // Estado manual de aprobación
+                "CONFEC. PRENDA" => "APROBADA", // Confección de prenda va al grupo APROBADA
+                
+                // Estados legacy que van a APROBADA
+                "En gestión" => "APROBADA",     // Legacy: ahora va al grupo APROBADA
+                "Propuesta" => "APROBADA",      // Legacy: ahora va al grupo APROBADA
+                
+                _ => "APROBADA" // Cualquier otro estado va a APROBADA por defecto
+            };
+        }
     }
 }

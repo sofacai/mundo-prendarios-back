@@ -289,6 +289,9 @@ namespace MundoPrendarios.Infrastructure.Migrations
                     b.Property<string>("Estado")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("EstadoDashboard")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("FechaAprobacion")
                         .HasColumnType("datetime2");
 
@@ -317,6 +320,9 @@ namespace MundoPrendarios.Infrastructure.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("MontoAprobado")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("MontoAprobadoBanco")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Observaciones")
