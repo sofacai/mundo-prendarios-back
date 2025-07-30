@@ -33,6 +33,7 @@ namespace MundoPrendarios.Core.DTOs
         public int? PlanAprobadoId { get; set; }
         public string PlanAprobadoNombre { get; set; }
         public DateTime? FechaAprobacion { get; set; }
+        public DateTime? FechaProcLiq { get; set; }
 
         // Datos adicionales para liquidación
         public bool Liquidada { get; set; }
@@ -95,6 +96,11 @@ namespace MundoPrendarios.Core.DTOs
     public class OperacionActualizarFechaLiquidacionDto
     {
         public DateTime? FechaLiquidacion { get; set; }
+    }
+
+    public class OperacionActualizarFechaProcLiqDto
+    {
+        public DateTime? FechaProcLiq { get; set; }
     }
 
     public class OperacionAprobarDto

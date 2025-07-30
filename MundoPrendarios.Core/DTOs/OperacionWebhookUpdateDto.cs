@@ -10,6 +10,7 @@
         public string? PlanAprobadoNombre { get; set; }
         public string? EstadoDesdeEtiqueta { get; set; }
         public DateTime? FechaAprobacion { get; set; }
+        public DateTime? FechaProcLiq { get; set; }
         public DateTime? FechaLiquidacion { get; set; }
 
         public decimal? CuotaInicialAprobada { get; set; }

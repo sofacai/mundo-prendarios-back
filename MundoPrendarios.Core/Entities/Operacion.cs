@@ -30,6 +30,7 @@ namespace MundoPrendarios.Core.Entities
         public string PlanAprobadoNombre { get; set; }
 
         public DateTime? FechaAprobacion { get; set; }
+        public DateTime? FechaProcLiq { get; set; }
 
         // Datos adicionales para liquidación
         public bool Liquidada { get; set; } = false;

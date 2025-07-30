@@ -33,6 +33,7 @@ namespace MundoPrendarios.Core.Services.Interfaces
         Task<IReadOnlyList<OperacionDto>> ObtenerOperacionesLiquidadasAsync();
         Task<OperacionDto> ActualizarDesdeWebhookAsync(OperacionWebhookUpdateDto dto);
         Task<OperacionDto> ActualizarFechaAprobacionAsync(int operacionId, DateTime? fechaAprobacion);
+        Task<OperacionDto> ActualizarFechaProcLiqAsync(int operacionId, DateTime? fechaProcLiq);
         Task<OperacionDto> ActualizarFechaLiquidacionAsync(int operacionId, DateTime? fechaLiquidacion);
 
         Task<bool> EliminarOperacionAsync(int operacionId);

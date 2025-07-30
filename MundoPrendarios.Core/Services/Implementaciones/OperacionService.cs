@@ -539,6 +539,24 @@ namespace MundoPrendarios.Core.Services.Implementaciones
             return _mapper.Map<OperacionDto>(operacionActualizada);
         }
 
+        public async Task<OperacionDto> ActualizarFechaProcLiqAsync(int operacionId, DateTime? fechaProcLiq)
+        {
+            var operacion = await _operacionRepository.GetByIdAsync(operacionId);
+            if (operacion == null)
+            {
+                throw new KeyNotFoundException($"No se encontró la operación con ID {operacionId}");
+            }
+
+            // Actualizar la FechaProcLiq (puede ser null para quitarla)
+            operacion.FechaProcLiq = fechaProcLiq;
+
+            await _operacionRepository.UpdateAsync(operacion);
+
+            // Devolver la operación actualizada con todos los detalles
+            var operacionActualizada = await _operacionRepository.GetOperacionWithDetailsAsync(operacionId);
+            return _mapper.Map<OperacionDto>(operacionActualizada);
+        }
+
         public async Task<OperacionDto> ActualizarFechaLiquidacionAsync(int operacionId, DateTime? fechaLiquidacion)
         {
             var operacion = await _operacionRepository.GetByIdAsync(operacionId);
@@ -577,7 +595,7 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                 // APROBADAS (estados en proceso)
                 "APROBADO DEF" => "APROBADA",   // Aprobado definitivo
                 "APROBADO PROV." => "APROBADA", // Aprobado provisorio
-                "EN PROC. LIQ." => "APROBADA",  // En proceso de liquidación
+                "EN PROC. LIQ." => "EN PROC LIQ",  // En proceso de liquidación
                 "Aprobada" => "APROBADA",       // Estado manual de aprobación
                 "CONFEC. PRENDA" => "APROBADA", // Confección de prenda va al grupo APROBADA
                 

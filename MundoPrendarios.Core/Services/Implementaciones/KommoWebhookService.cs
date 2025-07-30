@@ -218,8 +218,15 @@ namespace MundoPrendarios.Core.Services.Implementaciones
                     updateDto.FechaAprobacion = operacion.FechaAprobacion;
                 }
                 
-                // Si el nuevo estado es "LIQUIDADO" y no hay fecha de liquidación previa, establecerla
-                if (nuevoEstado == "LIQUIDADO" && operacion.FechaLiquidacion == null)
+                // Si el nuevo estado es "EN PROC. LIQ." y no hay fecha de proceso de liquidación previa, establecerla
+                if (nuevoEstado == "EN PROC. LIQ." && operacion.FechaProcLiq == null)
+                {
+                    operacion.FechaProcLiq = DateTime.UtcNow;
+                    updateDto.FechaProcLiq = operacion.FechaProcLiq;
+                }
+                
+                // Si el nuevo estado es "LIQUIDADA" y no hay fecha de liquidación previa, establecerla
+                if (nuevoEstado == "LIQUIDADA" && operacion.FechaLiquidacion == null)
                 {
                     operacion.FechaLiquidacion = DateTime.UtcNow;
                     operacion.Liquidada = true;
@@ -292,8 +299,8 @@ namespace MundoPrendarios.Core.Services.Implementaciones
         { "Rechazado BCRA", "RECHAZADO" },
         { "Rechazado Banco", "RECHAZADO" },
         { "Buqueado", "EN PROC. LIQ." },
-        { "Liquidado Canal", "LIQUIDADO" },
-        { "PREND. INS. ENTR.", "LIQUIDADO" }  // Nueva etiqueta ID 115788
+        { "Liquidado Canal", "LIQUIDADA" },
+        { "PREND. INS. ENTR.", "LIQUIDADA" }  // Nueva etiqueta ID 115788
     };
 
             // Usar el mapeo para un solo tag
@@ -304,12 +311,14 @@ namespace MundoPrendarios.Core.Services.Implementaciones
         {
             return estado switch
             {
-                "LIQUIDADO" => "LIQUIDADA",     // Estado de Kommo
+                "LIQUIDADA" => "LIQUIDADA",     // Estado de Kommo ya correcto
+                "LIQUIDADO" => "LIQUIDADA",     // Compatibility fallback
                 "Liquidada" => "LIQUIDADA",     // Estado manual del servicio
+                "EN PROC. LIQ." => "EN PROC LIQ", // En proceso de liquidación tiene su propio estadoDashboard
                 "RECHAZADO" => "INGRESADA",     // Rechazadas van a INGRESADA
                 "Propuesta" => "INGRESADA",     // Solo las propuestas iniciales
                 "ENVIADA MP" => "INGRESADA",    // Enviada a Mundo Prendarios
-                _ => "APROBADA" // Estados en proceso: APROBADO DEF, APROBADO PROV., CONFEC. PRENDA, EN PROC. LIQ., EN GESTION
+                _ => "APROBADA" // Estados en proceso: APROBADO DEF, APROBADO PROV., CONFEC. PRENDA, EN GESTION
             };
         }
     }
